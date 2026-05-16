@@ -1180,18 +1180,23 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     -- Update Label Properties
     espObj.Text.TextSize = textSize
     espObj.Text.TextColor3 = textColor
+    espObj.Text.Font = Enum.Font.Code
     espObj.Text.FontFace = font
     espObj.TeamText.TextSize = GetCfg("TeamIndicator.TextSize") or textSize
+    espObj.TeamText.Font = Enum.Font.Code
     espObj.TeamText.FontFace = font
     espObj.FriendlyText.TextSize = textSize
+    espObj.FriendlyText.Font = Enum.Font.Code
     espObj.FriendlyText.FontFace = font
 
     espObj.DistanceText.TextSize = textSize
     espObj.DistanceText.TextColor3 = textColor
+    espObj.DistanceText.Font = Enum.Font.Code
     espObj.DistanceText.FontFace = font
 
     espObj.WeaponText.TextSize = textSize
     espObj.WeaponText.TextColor3 = textColor
+    espObj.WeaponText.Font = Enum.Font.Code
     espObj.WeaponText.FontFace = font
 
     local px, py = math.floor(position.X), math.floor(position.Y)
