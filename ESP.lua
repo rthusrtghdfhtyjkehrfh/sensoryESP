@@ -1,6 +1,6 @@
 --[[
   // dacces ESP //
-  // v1.0.4 //
+  // v1.0.5 //
   // 16/5/2026 //
 
   Made with love by Dacces, Gemini 3 flash, Gemini 3.1 high / low, and Claude Sonnet 4.6
@@ -66,6 +66,13 @@ local WtS = Camera.WorldToViewportPoint
 local UIContainer = gethui and gethui() or CoreGui
 local BootstrapPlayers = Players
 local LPHNoVirtualize = LPH_NO_VIRTUALIZE
+local ESP = {}
+local ChamsContainer
+local MeshChamsFolder
+local ScreenGui
+local PlayerRemovingConnection
+local InputBeganConnection
+local CurrentRunId = HttpService:GenerateGUID(false)
 
 if getgenv().SensoryESP_Unload then
     pcall(getgenv().SensoryESP_Unload)
@@ -80,8 +87,6 @@ local oldMeshFolder = Workspace:FindFirstChild("SensoryESP_MeshChams")
 if oldMeshFolder then
     pcall(function() oldMeshFolder:Destroy() end)
 end
-
-local CurrentRunId = HttpService:GenerateGUID(false)
 
 local function IsMeshChamArtifact(obj)
     if not obj then
@@ -137,33 +142,34 @@ for _, player in ipairs(BootstrapPlayers:GetPlayers()) do
     CleanupCharacterMeshChams(player.Character)
 end
 
-local ChamsContainer = Instance.new("Folder")
-ChamsContainer.Name = "SensoryESP_Chams"
-ChamsContainer.Parent = UIContainer
+local function EnsureRootInstances()
+    if not ChamsContainer or not ChamsContainer.Parent then
+        ChamsContainer = Instance.new("Folder")
+        ChamsContainer.Name = "SensoryESP_Chams"
+        ChamsContainer.Parent = UIContainer
+    end
 
-local MeshChamsFolder = Instance.new("Folder")
-MeshChamsFolder.Name = "SensoryESP_MeshChams"
-MeshChamsFolder.Parent = Workspace
+    if not MeshChamsFolder or not MeshChamsFolder.Parent then
+        MeshChamsFolder = Instance.new("Folder")
+        MeshChamsFolder.Name = "SensoryESP_MeshChams"
+        MeshChamsFolder.Parent = Workspace
+    end
 
-getgenv().SensoryESP_Unload = function()
-    if getgenv().SensoryESP_UI then
-        getgenv().SensoryESP_UI:Destroy()
+    if not ScreenGui or not ScreenGui.Parent then
+        ScreenGui = Instance.new("ScreenGui")
+        ScreenGui.Name = "SensoryESP"
+        ScreenGui.ResetOnSpawn = false
+        ScreenGui.IgnoreGuiInset = true
+        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+        getgenv().SensoryESP_UI = ScreenGui
+
+        local success = pcall(function()
+            ScreenGui.Parent = CoreGui
+        end)
+        if not success then
+            ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+        end
     end
-    if ChamsContainer then
-        ChamsContainer:Destroy()
-    end
-    if MeshChamsFolder then
-        MeshChamsFolder:Destroy()
-    end
-    CleanupMeshChams(Workspace)
-    for _, player in ipairs(BootstrapPlayers:GetPlayers()) do
-        CleanupCharacterMeshChams(player.Character)
-    end
-    if getgenv().SensoryESP_Loop then
-        getgenv().SensoryESP_Loop:Disconnect()
-    end
-    getgenv().SensoryESP_UI = nil
-    getgenv().SensoryESP_Loop = nil
 end
 
 local DrawLine = LPHNoVirtualize(function(line, p1, p2, thickness, color)
@@ -498,6 +504,36 @@ local ESPConfig = {
         ]]
     }
 }
+
+local function DeepCopy(tbl)
+    if type(tbl) ~= "table" then
+        return tbl
+    end
+
+    local copy = {}
+    for key, value in pairs(tbl) do
+        copy[key] = DeepCopy(value)
+    end
+    return copy
+end
+
+local function DeepMerge(base, override)
+    if type(override) ~= "table" then
+        return base
+    end
+
+    for key, value in pairs(override) do
+        if type(value) == "table" and type(base[key]) == "table" then
+            DeepMerge(base[key], value)
+        else
+            base[key] = value
+        end
+    end
+
+    return base
+end
+
+local DefaultESPConfig = DeepCopy(ESPConfig)
 --
 
 --// fonts
@@ -594,19 +630,6 @@ pcall(InitFonts)
 
 --// variables
 local TrackedInstances = {}
-local ScreenGui = Instance.new("ScreenGui")
-getgenv().SensoryESP_UI = ScreenGui
-ScreenGui.Name = "SensoryESP"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-
-local success = pcall(function()
-    ScreenGui.Parent = CoreGui
-end)
-if not success then
-    ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-end
 
 --// functions
 local function GetInstanceFromPath(path)
@@ -1809,22 +1832,7 @@ end)
 
 local lastScan = 0
 local lastRender = 0
-Players.PlayerRemoving:Connect(function(player)
-    for inst, data in pairs(TrackedInstances) do
-        if Players:GetPlayerFromCharacter(inst) == player then
-            data.espObj:Destroy()
-            TrackedInstances[inst] = nil
-        end
-    end
-end)
-
-UserInputService.InputBegan:Connect(function(input, gpe)
-    if not gpe and ESPConfig.Keybind.Enabled and input.KeyCode == ESPConfig.Keybind.Key then
-        ESPConfig.Enabled = not ESPConfig.Enabled
-    end
-end)
-
-getgenv().SensoryESP_Loop = RunService.RenderStepped:Connect(function()
+local function RuntimeStep()
     if not ESPConfig.Enabled then
         for inst, data in pairs(TrackedInstances) do
             if data.espObj then
@@ -1874,7 +1882,84 @@ getgenv().SensoryESP_Loop = RunService.RenderStepped:Connect(function()
                 .Config, false)
         end
     end
-end)
---
+end
 
---end
+function ESP:Unload()
+    for inst, data in pairs(TrackedInstances) do
+        if data.espObj then
+            data.espObj:Destroy()
+        end
+        TrackedInstances[inst] = nil
+    end
+
+    if PlayerRemovingConnection then
+        PlayerRemovingConnection:Disconnect()
+        PlayerRemovingConnection = nil
+    end
+    if InputBeganConnection then
+        InputBeganConnection:Disconnect()
+        InputBeganConnection = nil
+    end
+    if getgenv().SensoryESP_Loop then
+        getgenv().SensoryESP_Loop:Disconnect()
+        getgenv().SensoryESP_Loop = nil
+    end
+    if ScreenGui then
+        ScreenGui:Destroy()
+        ScreenGui = nil
+    end
+    if ChamsContainer then
+        ChamsContainer:Destroy()
+        ChamsContainer = nil
+    end
+    if MeshChamsFolder then
+        MeshChamsFolder:Destroy()
+        MeshChamsFolder = nil
+    end
+
+    CleanupMeshChams(Workspace)
+    for _, player in ipairs(BootstrapPlayers:GetPlayers()) do
+        CleanupCharacterMeshChams(player.Character)
+    end
+
+    getgenv().SensoryESP_UI = nil
+end
+
+function ESP:Load(config)
+    self:Unload()
+
+    ESPConfig = DeepMerge(DeepCopy(DefaultESPConfig), config or {})
+    EnsureRootInstances()
+    CurrentRunId = HttpService:GenerateGUID(false)
+    lastScan = 0
+    lastRender = 0
+
+    PlayerRemovingConnection = Players.PlayerRemoving:Connect(function(player)
+        for inst, data in pairs(TrackedInstances) do
+            if Players:GetPlayerFromCharacter(inst) == player then
+                data.espObj:Destroy()
+                TrackedInstances[inst] = nil
+            end
+        end
+    end)
+
+    InputBeganConnection = UserInputService.InputBegan:Connect(function(input, gpe)
+        if not gpe and ESPConfig.Keybind.Enabled and input.KeyCode == ESPConfig.Keybind.Key then
+            ESPConfig.Enabled = not ESPConfig.Enabled
+        end
+    end)
+
+    getgenv().SensoryESP_Loop = RunService.RenderStepped:Connect(RuntimeStep)
+    ScanDirectories()
+    return self
+end
+
+function ESP:GetConfig()
+    return ESPConfig
+end
+
+getgenv().SensoryESP_Unload = function()
+    ESP:Unload()
+end
+
+return ESP
