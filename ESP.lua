@@ -254,6 +254,18 @@ local ESPConfig = {
     TextOutline = true,
     TextGap = 3,
     Font = "Proggy Clean",
+    TeamIndicator = {
+        Enabled = true,
+        UseTeamColor = true,
+        Color = Color3.fromRGB(255, 255, 255),
+    },
+    FriendlyIndicator = {
+        Enabled = true,
+        CheckTeam = true,
+        CheckFriends = true,
+        Text = "[F]",
+        Color = Color3.fromRGB(0, 255, 0),
+    },
     Weapon = {
         Enabled = true,
         Gap = 1,
@@ -753,6 +765,20 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     nameText.Text = name
     espObj.Text = nameText
 
+    local teamText = Instance.new("TextLabel")
+    SetupLabel(teamText)
+    teamText.TextXAlignment = Enum.TextXAlignment.Left
+    teamText.TextYAlignment = Enum.TextYAlignment.Bottom
+    teamText.Visible = false
+    espObj.TeamText = teamText
+
+    local friendlyText = Instance.new("TextLabel")
+    SetupLabel(friendlyText)
+    friendlyText.TextXAlignment = Enum.TextXAlignment.Left
+    friendlyText.TextYAlignment = Enum.TextYAlignment.Bottom
+    friendlyText.Visible = false
+    espObj.FriendlyText = friendlyText
+
     local distText = Instance.new("TextLabel")
     SetupLabel(distText)
     distText.TextYAlignment = Enum.TextYAlignment.Top
@@ -1093,6 +1119,12 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     -- Exit early if not on screen for 2D elements
     if not onScreen or not position or not size then
         espObj.Container.Visible = false
+        if espObj.TeamText then
+            espObj.TeamText.Visible = false
+        end
+        if espObj.FriendlyText then
+            espObj.FriendlyText.Visible = false
+        end
         for i = 1, #espObj.CircleLines do
             espObj.CircleLines[i].Visible = false
             espObj.CircleOutlines[i].Visible = false
@@ -1114,6 +1146,10 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     espObj.Text.TextSize = textSize
     espObj.Text.TextColor3 = textColor
     espObj.Text.FontFace = font
+    espObj.TeamText.TextSize = textSize
+    espObj.TeamText.FontFace = font
+    espObj.FriendlyText.TextSize = textSize
+    espObj.FriendlyText.FontFace = font
 
     espObj.DistanceText.TextSize = textSize
     espObj.DistanceText.TextColor3 = textColor
@@ -1159,6 +1195,12 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     end
 
     if isCheap then
+        if espObj.TeamText then
+            espObj.TeamText.Visible = false
+        end
+        if espObj.FriendlyText then
+            espObj.FriendlyText.Visible = false
+        end
         for i = 1, 4 do
             espObj.Lines[i].Visible = false
             espObj.Outlines[i].Visible = false
@@ -1181,6 +1223,8 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
         espObj.Text.Text = name .. " " .. distVal .. GetCfg("Distance.Ending")
         espObj.Text.Position = UDim2.new(0, px - 50, 0, py - (textSize / 2))
+        espObj.TeamText.Visible = false
+        espObj.FriendlyText.Visible = false
         espObj.DistanceText.Visible = false
         return
     end
@@ -1320,7 +1364,46 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         fill.Visible = false
     end
 
-    espObj.Text.Position = UDim2.new(0, px - 50, 0, y - textSize - (GetCfg("TextGap") or 0) - topOffset)
+    local nameY = y - textSize - (GetCfg("TextGap") or 0) - topOffset
+    espObj.Text.Position = UDim2.new(0, px - 50, 0, nameY)
+
+    local teamOwner = instance:IsA("Model") and Players:GetPlayerFromCharacter(instance) or nil
+    local rightTextX = px + 8
+    if GetCfg("TeamIndicator.Enabled") and teamOwner and teamOwner.Team then
+        local teamColor = GetCfg("TeamIndicator.UseTeamColor") and teamOwner.TeamColor.Color or GetCfg("TeamIndicator.Color")
+        local teamText = "[" .. teamOwner.Team.Name .. "]"
+        espObj.TeamText.Text = teamText
+        espObj.TeamText.TextColor3 = teamColor
+        espObj.TeamText.Visible = true
+        espObj.TeamText.Position = UDim2.new(0, rightTextX, 0, nameY)
+        rightTextX = rightTextX + 48
+    else
+        espObj.TeamText.Visible = false
+    end
+
+    local isFriendly = false
+    if teamOwner and GetCfg("FriendlyIndicator.Enabled") then
+        if GetCfg("FriendlyIndicator.CheckTeam") and LocalPlayer.Team ~= nil and teamOwner.Team == LocalPlayer.Team then
+            isFriendly = true
+        end
+        if not isFriendly and GetCfg("FriendlyIndicator.CheckFriends") then
+            local ok, result = pcall(function()
+                return LocalPlayer:IsFriendsWith(teamOwner.UserId)
+            end)
+            if ok and result then
+                isFriendly = true
+            end
+        end
+    end
+
+    if isFriendly then
+        espObj.FriendlyText.Text = GetCfg("FriendlyIndicator.Text")
+        espObj.FriendlyText.TextColor3 = GetCfg("FriendlyIndicator.Color")
+        espObj.FriendlyText.Position = UDim2.new(0, rightTextX, 0, nameY)
+        espObj.FriendlyText.Visible = true
+    else
+        espObj.FriendlyText.Visible = false
+    end
 
     local currentBottomY = y + sy + (GetCfg("Distance.Gap") or 0) + bottomOffset
     if GetCfg("Distance.Enabled") then
@@ -1836,7 +1919,10 @@ local function RuntimeStep()
     if not ESPConfig.Enabled then
         for inst, data in pairs(TrackedInstances) do
             if data.espObj then
-                UpdateESPObj(data.espObj, nil, nil, "", 0, inst, false, false, false, nil, false)
+                local disabledConfig = DeepCopy(data.Config or {})
+                disabledConfig.Chams = disabledConfig.Chams or {}
+                disabledConfig.Chams.Enabled = false
+                UpdateESPObj(data.espObj, nil, nil, "", 0, inst, data.Cheap, data.NonHuman, data.NoStatus, disabledConfig, false)
             end
         end
         return
