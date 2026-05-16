@@ -1,6 +1,6 @@
 --[[
   // dacces ESP //
-  // v1.0.0 //
+  // v1.0.1 //
   // 16/5/2026 //
 
   Made with love by Dacces, Gemini 3 flash, Gemini 3.1 high / low, and Claude Sonnet 4.6
@@ -461,24 +461,24 @@
     local SKELETON_BONE_DEFS = {
         {"Head", "UpperTorso|Torso"},
         {"UpperTorso|Torso", "LowerTorso|Torso"},
-        
+
         -- Arms
         {"UpperTorso|Torso", "LeftUpperArm|Left Arm|LeftArm"},
-        {"LeftUpperArm|Left Arm|LeftArm", "LeftLowerArm|Left Lower Arm"},
-        {"LeftLowerArm|Left Lower Arm", "LeftHand|LeftHand"},
-        
+        {"LeftUpperArm|Left Arm|LeftArm", "LeftLowerArm|Left Lower Arm|LeftHand"},
+        {"LeftLowerArm|Left Lower Arm|LeftHand", "LeftHand"},
+
         {"UpperTorso|Torso", "RightUpperArm|Right Arm|RightArm"},
-        {"RightUpperArm|Right Arm|RightArm", "RightLowerArm|Right Lower Arm"},
-        {"RightLowerArm|Right Lower Arm", "RightHand|RightHand"},
-        
+        {"RightUpperArm|Right Arm|RightArm", "RightLowerArm|Right Lower Arm|RightHand"},
+        {"RightLowerArm|Right Lower Arm|RightHand", "RightHand"},
+
         -- Legs
         {"LowerTorso|Torso", "LeftUpperLeg|Left Leg|LeftLeg"},
-        {"LeftUpperLeg|Left Leg|LeftLeg", "LeftLowerLeg|Left Lower Leg"},
-        {"LeftLowerLeg|Left Lower Leg", "LeftFoot|LeftFoot"},
-        
+        {"LeftUpperLeg|Left Leg|LeftLeg", "LeftLowerLeg|Left Lower Leg|LeftFoot"},
+        {"LeftLowerLeg|Left Lower Leg|LeftFoot", "LeftFoot"},
+
         {"LowerTorso|Torso", "RightUpperLeg|Right Leg|RightLeg"},
-        {"RightUpperLeg|Right Leg|RightLeg", "RightLowerLeg|Right Lower Leg"},
-        {"RightLowerLeg|Right Lower Leg", "RightFoot|RightFoot"}
+        {"RightUpperLeg|Right Leg|RightLeg", "RightLowerLeg|Right Lower Leg|RightFoot"},
+        {"RightLowerLeg|Right Lower Leg|RightFoot", "RightFoot"}
     }
 
     local function FindPartByPatterns(Character, Pattern)
@@ -895,10 +895,10 @@
                         local r6Parts  = {"Head","Torso","Left Arm","Right Arm","Left Leg","Right Leg"}
                         local r15Parts = {
                             "Head","UpperTorso","LowerTorso",
-                            "LeftUpperArm","LeftLowerArm",
-                            "RightUpperArm","RightLowerArm",
-                            "LeftUpperLeg","LeftLowerLeg",
-                            "RightUpperLeg","RightLowerLeg",
+                            "LeftUpperArm","LeftLowerArm","LeftHand",
+                            "RightUpperArm","RightLowerArm","RightHand",
+                            "LeftUpperLeg","LeftLowerLeg","LeftFoot",
+                            "RightUpperLeg","RightLowerLeg","RightFoot",
                         }
                         local humanoidInst = instance:FindFirstChild("Humanoid")
                         local isR15    = humanoidInst and (humanoidInst.RigType == Enum.HumanoidRigType.R15)
