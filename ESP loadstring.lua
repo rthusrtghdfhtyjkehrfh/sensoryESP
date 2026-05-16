@@ -16,6 +16,15 @@ esp:Load({
     DynamicBoxes = true,
     VisibilityCheckRate = 0.3,
 
+	-- kd
+	FriendlyIndicator = {
+    	Enabled = true,
+    	CheckTeam = true,
+    	CheckFriends = true,
+    	Text = "[F]",
+    	Color = Color3.fromRGB(0, 255, 0),
+	},
+		
     -- boxes
     Boxes = true,
     BoxType = "Corner",
