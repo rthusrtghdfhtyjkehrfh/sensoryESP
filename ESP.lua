@@ -256,11 +256,15 @@ local ESPConfig = {
     Font = "Proggy Clean",
     TeamIndicator = {
         Enabled = true,
+        Position = "Right", -- "Left" or "Right"
         UseTeamColor = true,
         Color = Color3.fromRGB(255, 255, 255),
+        Compact = true,
+        TextSize = 10,
     },
     FriendlyIndicator = {
         Enabled = true,
+        Position = "Right", -- "Left" or "Right"
         CheckTeam = true,
         CheckFriends = true,
         Text = "[F]",
@@ -546,6 +550,37 @@ local function DeepMerge(base, override)
 end
 
 local DefaultESPConfig = DeepCopy(ESPConfig)
+
+local function CompactTeamName(teamName)
+    if type(teamName) ~= "string" or teamName == "" then
+        return ""
+    end
+
+    local parts = {}
+    for part in teamName:gmatch("[^%s%-_]+") do
+        if part ~= "" then
+            table.insert(parts, part)
+        end
+    end
+
+    if #parts == 0 then
+        return teamName
+    end
+
+    if #parts == 1 then
+        local single = parts[1]
+        if #single <= 4 then
+            return single:upper()
+        end
+        return single:sub(1, 1):upper()
+    end
+
+    local compact = {}
+    for _, part in ipairs(parts) do
+        table.insert(compact, part:sub(1, 1):upper())
+    end
+    return table.concat(compact)
+end
 --
 
 --// fonts
@@ -1146,7 +1181,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     espObj.Text.TextSize = textSize
     espObj.Text.TextColor3 = textColor
     espObj.Text.FontFace = font
-    espObj.TeamText.TextSize = textSize
+    espObj.TeamText.TextSize = GetCfg("TeamIndicator.TextSize") or textSize
     espObj.TeamText.FontFace = font
     espObj.FriendlyText.TextSize = textSize
     espObj.FriendlyText.FontFace = font
@@ -1369,14 +1404,23 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
     local teamOwner = instance:IsA("Model") and Players:GetPlayerFromCharacter(instance) or nil
     local rightTextX = px + 8
+    local leftTextX = px - 58
     if GetCfg("TeamIndicator.Enabled") and teamOwner and teamOwner.Team then
         local teamColor = GetCfg("TeamIndicator.UseTeamColor") and teamOwner.TeamColor.Color or GetCfg("TeamIndicator.Color")
-        local teamText = "[" .. teamOwner.Team.Name .. "]"
+        local teamName = teamOwner.Team.Name
+        local compactTeam = GetCfg("TeamIndicator.Compact") and CompactTeamName(teamName) or teamName
+        local teamText = "[" .. compactTeam .. "]"
+        local teamWidth = math.max(26, (#teamText * 7))
         espObj.TeamText.Text = teamText
         espObj.TeamText.TextColor3 = teamColor
         espObj.TeamText.Visible = true
-        espObj.TeamText.Position = UDim2.new(0, rightTextX, 0, nameY)
-        rightTextX = rightTextX + 48
+        if GetCfg("TeamIndicator.Position") == "Left" then
+            espObj.TeamText.Position = UDim2.new(0, leftTextX - teamWidth, 0, nameY)
+            leftTextX = leftTextX - teamWidth - 4
+        else
+            espObj.TeamText.Position = UDim2.new(0, rightTextX, 0, nameY)
+            rightTextX = rightTextX + teamWidth + 4
+        end
     else
         espObj.TeamText.Visible = false
     end
@@ -1397,9 +1441,17 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     end
 
     if isFriendly then
+        local friendlyText = GetCfg("FriendlyIndicator.Text")
+        local friendlyWidth = math.max(20, (#friendlyText * 7))
         espObj.FriendlyText.Text = GetCfg("FriendlyIndicator.Text")
         espObj.FriendlyText.TextColor3 = GetCfg("FriendlyIndicator.Color")
-        espObj.FriendlyText.Position = UDim2.new(0, rightTextX, 0, nameY)
+        if GetCfg("FriendlyIndicator.Position") == "Left" then
+            espObj.FriendlyText.Position = UDim2.new(0, leftTextX - friendlyWidth, 0, nameY)
+            leftTextX = leftTextX - friendlyWidth - 4
+        else
+            espObj.FriendlyText.Position = UDim2.new(0, rightTextX, 0, nameY)
+            rightTextX = rightTextX + friendlyWidth + 4
+        end
         espObj.FriendlyText.Visible = true
     else
         espObj.FriendlyText.Visible = false
