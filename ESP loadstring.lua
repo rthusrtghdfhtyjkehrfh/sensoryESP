@@ -17,13 +17,24 @@ esp:Load({
     VisibilityCheckRate = 0.3,
 
 	-- kd
-	FriendlyIndicator = {
-    	Enabled = true,
-    	CheckTeam = true,
-    	CheckFriends = true,
-    	Text = "[F]",
-    	Color = Color3.fromRGB(0, 255, 0),
+	TeamIndicator = {
+	    Enabled = true,
+	    Position = "Right", -- "Left" or "Right"
+	    UseTeamColor = true,
+	    Color = Color3.fromRGB(255, 255, 255),
+	    Compact = true,
+	    TextSize = 10,
 	},
+	
+	FriendlyIndicator = {
+	    Enabled = true,
+	    Position = "Right", -- "Left" or "Right"
+	    CheckTeam = true,
+	    CheckFriends = true,
+	    Text = "[F]",
+	    Color = Color3.fromRGB(0, 255, 0),
+	},
+
 		
     -- boxes
     Boxes = true,
