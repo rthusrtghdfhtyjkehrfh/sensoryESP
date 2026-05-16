@@ -49,3 +49,6 @@ Roblox - LUAU esp.
   
   Purpose of this script?
   Proves that no ESP will be unique.
+
+  Dont forget to join our discord server!
+  https://discord.gg/5PbywJygJx
