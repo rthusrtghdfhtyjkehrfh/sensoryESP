@@ -2,7 +2,9 @@
 Roblox - LUAU esp.
 
 Loadstring
-```loadstring(game:HttpGet("https://github.com/rthusrtghdfhtyjkehrfh/sensoryESP/raw/refs/heads/main/ESP.lua"))()```
+```lua
+loadstring(game:HttpGet("https://github.com/rthusrtghdfhtyjkehrfh/sensoryESP/raw/refs/heads/main/ESP.lua"))()
+```
 
   // dacces ESP //
   // v1.0.0 //
