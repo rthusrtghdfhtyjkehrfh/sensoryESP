@@ -196,8 +196,9 @@ esp:Load({
             Config = {
                 -- Box Settings
                 Boxes = true,
+		BoxType = "Corner",
                 BoxColor = Color3.fromRGB(255, 150, 0),
-                BoxThickness = 1.5,
+                BoxThickness = 1,
 
 
                 BoxFill = {
@@ -291,7 +292,7 @@ esp:Load({
                     }
                 },
 
-                -- Skeleton Settings (Template only, usually for players)
+                -- Skeleton 
                 Skeleton = {
                     Enabled = false,
                     Color = Color3.fromRGB(255, 255, 255),
