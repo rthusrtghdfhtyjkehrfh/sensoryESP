@@ -1401,25 +1401,26 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
     local nameY = y - textSize - (GetCfg("TextGap") or 0) - topOffset
     espObj.Text.Position = UDim2.new(0, px - 50, 0, nameY)
+    local nameWidth = math.max(espObj.Text.TextBounds.X, 1)
+    local rightTextX = px + math.floor(nameWidth / 2) + 6
+    local leftTextX = px - math.floor(nameWidth / 2) - 6
 
     local teamOwner = instance:IsA("Model") and Players:GetPlayerFromCharacter(instance) or nil
-    local rightTextX = px + 8
-    local leftTextX = px - 58
     if GetCfg("TeamIndicator.Enabled") and teamOwner and teamOwner.Team then
         local teamColor = GetCfg("TeamIndicator.UseTeamColor") and teamOwner.TeamColor.Color or GetCfg("TeamIndicator.Color")
         local teamName = teamOwner.Team.Name
         local compactTeam = GetCfg("TeamIndicator.Compact") and CompactTeamName(teamName) or teamName
         local teamText = "[" .. compactTeam .. "]"
-        local teamWidth = math.max(26, (#teamText * 7))
         espObj.TeamText.Text = teamText
         espObj.TeamText.TextColor3 = teamColor
         espObj.TeamText.Visible = true
+        local teamWidth = math.max(espObj.TeamText.TextBounds.X, 1)
         if GetCfg("TeamIndicator.Position") == "Left" then
             espObj.TeamText.Position = UDim2.new(0, leftTextX - teamWidth, 0, nameY)
-            leftTextX = leftTextX - teamWidth - 4
+            leftTextX = leftTextX - teamWidth - 6
         else
             espObj.TeamText.Position = UDim2.new(0, rightTextX, 0, nameY)
-            rightTextX = rightTextX + teamWidth + 4
+            rightTextX = rightTextX + teamWidth + 6
         end
     else
         espObj.TeamText.Visible = false
@@ -1442,15 +1443,15 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
     if isFriendly then
         local friendlyText = GetCfg("FriendlyIndicator.Text")
-        local friendlyWidth = math.max(20, (#friendlyText * 7))
-        espObj.FriendlyText.Text = GetCfg("FriendlyIndicator.Text")
+        espObj.FriendlyText.Text = friendlyText
         espObj.FriendlyText.TextColor3 = GetCfg("FriendlyIndicator.Color")
+        local friendlyWidth = math.max(espObj.FriendlyText.TextBounds.X, 1)
         if GetCfg("FriendlyIndicator.Position") == "Left" then
             espObj.FriendlyText.Position = UDim2.new(0, leftTextX - friendlyWidth, 0, nameY)
-            leftTextX = leftTextX - friendlyWidth - 4
+            leftTextX = leftTextX - friendlyWidth - 6
         else
             espObj.FriendlyText.Position = UDim2.new(0, rightTextX, 0, nameY)
-            rightTextX = rightTextX + friendlyWidth + 4
+            rightTextX = rightTextX + friendlyWidth + 6
         end
         espObj.FriendlyText.Visible = true
     else
