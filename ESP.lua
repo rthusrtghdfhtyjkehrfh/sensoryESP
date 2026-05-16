@@ -15,7 +15,7 @@
   https://v3rm.net/threads/chatgpt-esp-by-me.28629/#post-242437 > https://raw.githubusercontent.com/emptyusesdx9/astral.rip/refs/heads/main/esp
 
   Bugs:
-  Fixed: Mesh chams doesnt have double execution protection, so expect bugs with it.
+  ////Fixed: Mesh chams doesnt have double execution protection, so expect bugs with it.
 
   Credits:
   actual people: dacceson / dacces / dabid / d  a  c  c  e  s / s0ulhook / dualesp / nocturnal
@@ -26,6 +26,8 @@
 
   Supports:
   Boxes
+  Corner boxes
+  Circle boxes
   Names
   Distance
   Flags
@@ -36,7 +38,6 @@
   Planning to make:
   Offscreen arrows
   Circle boxes
-  Corner boxes
   Ammo bar
   Armor bar
   new skeleton esp
@@ -44,54 +45,56 @@
   Purpose of this script?
   Proves that no ESP will be unique.
 ]]
---// prints
-local Printing = true
-local Version = "v1.0.3"
 
-if Printing then
-    print("dacces")
-    wait(0.1)
-    warn("dacces")
-    wait(0.1)
-    print("dacces")
-    wait(0.1)
-    warn("dacces")
-    wait(0.1)
-    print("dacces")
-    wait(0.1)
-    warn("dacces")
-    wait(0.1)
-    print("dacces")
-    wait(0.1)
-    warn("dacces")
-    wait(0.1)
-    print("dacces")
-    wait(0.1)
-    wait(1)
-
-    if getgenv().SensoryESP_LastVersion and getgenv().SensoryESP_LastVersion ~= Version then
-        print("version changed! " .. Version)
-    else
-        print("running " .. Version)
+if not LPH_OBFUSCATED then
+    LPH_JIT = LPH_JIT or function(...)
+        return ...
     end
-
-    print("Sensory ESP")
+    LPH_JIT_MAX = LPH_JIT_MAX or function(...)
+        return ...
+    end
+    LPH_NO_VIRTUALIZE = LPH_NO_VIRTUALIZE or function(...)
+        return ...
+    end
+    LPH_NO_UPVALUES = LPH_NO_UPVALUES or function(f)
+        return function(...)
+            return f(...)
+        end
+    end
+    LPH_ENCSTR = LPH_ENCSTR or function(...)
+        return ...
+    end
+    LPH_ENCNUM = LPH_ENCNUM or function(...)
+        return ...
+    end
+    LPH_ENCFUNC = LPH_ENCFUNC or function(func, key1, key2)
+        if key1 ~= key2 then
+            return print("LPH_ENCFUNC mismatch")
+        end
+        return func
+    end
+    LPH_CRASH = LPH_CRASH or function()
+        return print(debug.traceback())
+    end
 end
 
-getgenv().SensoryESP_LastVersion = Version
---
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+local WtS = Camera.WorldToViewportPoint
+local UIContainer = gethui and gethui() or CoreGui
+local BootstrapPlayers = Players
+local LPHNoVirtualize = LPH_NO_VIRTUALIZE
 
---// unload
 if getgenv().SensoryESP_Unload then
     pcall(getgenv().SensoryESP_Unload)
 end
 
-local Camera = Workspace.CurrentCamera
-local WtS = Camera.WorldToViewportPoint
-
-local UIContainer = gethui and gethui() or CoreGui
-
--- Explicitly nuke any old containers left over from previous runs
 local oldChams = UIContainer:FindFirstChild("SensoryESP_Chams")
 if oldChams then
     pcall(function() oldChams:Destroy() end)
@@ -102,8 +105,7 @@ if oldMeshFolder then
     pcall(function() oldMeshFolder:Destroy() end)
 end
 
-local BootstrapPlayers = game:GetService("Players")
-local CurrentRunId = game:GetService("HttpService"):GenerateGUID(false)
+local CurrentRunId = HttpService:GenerateGUID(false)
 
 local function IsMeshChamArtifact(obj)
     if not obj then
@@ -153,8 +155,6 @@ local function CleanupCharacterMeshChams(character)
     end
 end
 
--- MeshChams shells may be parented into character models, so a re-exec
--- needs to clean those explicitly as well.
 CleanupMeshChams(Workspace)
 
 for _, player in ipairs(BootstrapPlayers:GetPlayers()) do
@@ -165,7 +165,6 @@ local ChamsContainer = Instance.new("Folder")
 ChamsContainer.Name = "SensoryESP_Chams"
 ChamsContainer.Parent = UIContainer
 
--- Per-player shell models live here: Workspace/SensoryESP_MeshChams/PlayerName/
 local MeshChamsFolder = Instance.new("Folder")
 MeshChamsFolder.Name = "SensoryESP_MeshChams"
 MeshChamsFolder.Parent = Workspace
@@ -190,20 +189,8 @@ getgenv().SensoryESP_Unload = function()
     getgenv().SensoryESP_UI = nil
     getgenv().SensoryESP_Loop = nil
 end
---
 
---// services
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local CoreGui = game:GetService("CoreGui")
-local Workspace = game:GetService("Workspace")
-local HttpService = game:GetService("HttpService")
-local Camera = Workspace.CurrentCamera
-local WtS = Camera.WorldToViewportPoint
-
-local function DrawLine(line, p1, p2, thickness, color)
+local DrawLine = LPHNoVirtualize(function(line, p1, p2, thickness, color)
     local diff = p2 - p1
     local dist = diff.Magnitude
     local angle = math.deg(math.atan2(diff.Y, diff.X))
@@ -214,11 +201,10 @@ local function DrawLine(line, p1, p2, thickness, color)
     line.Rotation = angle
     line.BackgroundColor3 = color
     line.Visible = true
-end
---
+end)
 
---// esp
 local ESPConfig = {
+    -- esp checks
     Enabled = true,
     Keybind = {
         Enabled = true,
@@ -226,18 +212,22 @@ local ESPConfig = {
     },
     Players = true,
     LocalPlayer = false,
-    LimitFPS = 75, -- Set to 0 to disable limit
+    LimitFPS = 70, -- Set to 0 to disable limit
+    DynamicBoxes = true,
+    VisibilityCheckRate = 0.3,
+
+    -- boxes
     Boxes = true,
+    BoxType = "Normal", -- "Normal", "Corner", or "Circle"
     BoxColor = Color3.fromRGB(255, 255, 255),
     BoxThickness = 1,
-
-
     Outlines = {
         Enabled = true,
         Color = Color3.fromRGB(0, 0, 0),
         Thickness = 1,
     },
 
+    -- boxfill
     BoxFill = {
         Enabled = true,
         Color = Color3.fromRGB(255, 255, 255),
@@ -254,61 +244,7 @@ local ESPConfig = {
         }
     },
 
-    TextSize = 12,
-    TextColor = Color3.fromRGB(255, 255, 255),
-    TextOutline = true,
-    TextGap = 3,
-
-    DynamicBoxes = true,
-    VisibilityCheckRate = 0.3, -- Seconds between visibility raycasts (Performance)
-
-    Font = "Proggy Clean",     -- "Tahoma", "Minecraftia", "Smallest Pixel-7"", "Proggy Clean", "Tahoma Modern Bold"
-
-    --[[
-            recomended font sizes:
-            10 Minecraftia
-            12 Tahoma
-            8 Smallest Pixel-7"
-            12 Proggy Clean
-            12 Tahoma Modern Bold
-        ]]
-
-    Distance = {
-        Enabled = true,
-        Unit = "Meters",   -- "Meters" or "Studs" any
-        StudsPerMeter = 3, -- 3 studs = 1 meter
-        Ending = "",       -- "m" or "s" depending on unit
-        Gap = 3,
-    },
-
-    Flags = {
-        Enabled = true,
-        Position = "Right", -- "Left" or "Right"
-        SideGap = 4,
-        TextGap = 2,
-        Font = "Smallest Pixel-7", -- "Tahoma", "Minecraftia", "Smallest Pixel-7", "Proggy Clean", "Tahoma Modern Bold"
-        TextSize = 9,
-        Options = {
-            Idle = false,
-            Moving = true,
-            Jumping = true,
-            Swimming = true,
-        },
-        Colors = {
-            Idle = Color3.fromRGB(255, 255, 255),
-            Moving = Color3.fromRGB(255, 255, 255),
-            Jumping = Color3.fromRGB(255, 255, 255),
-            Swimming = Color3.fromRGB(65, 65, 255),
-        }
-    },
-
-    Weapon = {
-        Enabled = true,
-        Gap = 1,
-        InventoryPath = "ReplicatedStorage.Players.%NAME%.Inventory", -- %NAME% replaces with player name
-        UseToolFallback = true,
-    },
-
+    -- healthbar
     HealthBar = {
         Enabled = true,
         Position = "Left", -- "Left", "Right", "Top", "Bottom"
@@ -330,6 +266,42 @@ local ESPConfig = {
         }
     },
 
+    -- names
+    TextSize = 12,
+    TextColor = Color3.fromRGB(255, 255, 255),
+    TextOutline = true,
+    TextGap = 3,
+    Font = "Proggy Clean",
+    Weapon = {
+        Enabled = true,
+        Gap = 1,
+        InventoryPath = "ReplicatedStorage.Players.%NAME%.Inventory",
+        UseToolFallback = true,
+    },
+
+    -- flags
+    Flags = {
+        Enabled = true,
+        Position = "Right",
+        SideGap = 4,
+        TextGap = 2,
+        Font = "Smallest Pixel-7",
+        TextSize = 9,
+        Options = {
+            Idle = false,
+            Moving = true,
+            Jumping = true,
+            Swimming = true,
+        },
+        Colors = {
+            Idle = Color3.fromRGB(255, 255, 255),
+            Moving = Color3.fromRGB(255, 255, 255),
+            Jumping = Color3.fromRGB(255, 255, 255),
+            Swimming = Color3.fromRGB(65, 65, 255),
+        }
+    },
+
+    --skeleton
     Skeleton = {
         Enabled = false,
         Color = Color3.fromRGB(255, 255, 255),
@@ -338,6 +310,16 @@ local ESPConfig = {
         Thickness = 1,
     },
 
+    -- distance
+    Distance = {
+        Enabled = true,
+        Unit = "Meters",
+        StudsPerMeter = 3,
+        Ending = "",
+        Gap = 3,
+    },
+
+    -- chams
     Chams = {
         Enabled = true,
         Type = "MeshChams", -- "Highlight", "Adornment", or "MeshChams"
@@ -369,6 +351,7 @@ local ESPConfig = {
         },
     },
 
+    -- directories
     Directories = {
         --[[{
                 DisplayName = "Part",
@@ -377,7 +360,7 @@ local ESPConfig = {
                 Cheap = true,
                 Contains = {},
                 Names = {"Part"}
-            },]]
+            },
         {
             DisplayName = "Dummy",
             Path = "workspace",
@@ -536,7 +519,7 @@ local ESPConfig = {
                 Contains = {},
                 Names = {"CashRegister"}
             },
-    ]]
+        ]]
     }
 }
 --
@@ -553,6 +536,7 @@ local FontsToDownload = {
 }
 
 local ESPFonts = { Loaded = {} }
+local CIRCLE_BOX_SEGMENTS = 36
 
 local SKELETON_BONE_DEFS = {
     { "Head",                                    "UpperTorso|Torso" },
@@ -684,11 +668,15 @@ local function CreateLine(parent)
     return line, outline
 end
 
-local function CreateESPObj(name)
+local CreateESPObj = LPHNoVirtualize(function(name)
     local espObj = {
         Visible = false,
         Lines = {},
         Outlines = {},
+        CornerLines = {},
+        CornerOutlines = {},
+        CircleLines = {},
+        CircleOutlines = {},
         FlagLabels = {},
         LastVisCheck = 0,
         CachedModelVisible = true
@@ -715,6 +703,26 @@ local function CreateESPObj(name)
         local line, outline = CreateLine(container)
         espObj.Lines[i] = line
         espObj.Outlines[i] = outline
+    end
+
+    for i = 1, 8 do
+        local line, outline = CreateLine(container)
+        line.Visible = false
+        outline.Visible = false
+        espObj.CornerLines[i] = line
+        espObj.CornerOutlines[i] = outline
+    end
+
+    for i = 1, CIRCLE_BOX_SEGMENTS do
+        local line = Drawing.new("Line")
+        line.Visible = false
+        line.ZIndex = 2
+        espObj.CircleLines[i] = line
+
+        local outline = Drawing.new("Line")
+        outline.Visible = false
+        outline.ZIndex = 1
+        espObj.CircleOutlines[i] = outline
     end
 
     local function SetupLabel(label)
@@ -833,13 +841,16 @@ local function CreateESPObj(name)
         if espObj.Highlight then espObj.Highlight:Destroy() end
         if espObj.MeshShell then espObj.MeshShell:Destroy() end
         for _, a in pairs(espObj.Adornments) do a:Destroy() end
+        for _, line in ipairs(espObj.CircleLines) do line:Remove() end
+        for _, outline in ipairs(espObj.CircleOutlines) do outline:Remove() end
     end
 
     return espObj
-end
+end)
 
-local function UpdateESPObj(espObj, position, size, name, distanceStuds, instance, isCheap, nonHuman, noStatus,
-                            configOverride, onScreen)
+local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, distanceStuds, instance, isCheap, nonHuman,
+                                              noStatus,
+                                              configOverride, onScreen)
     local function GetCfg(path)
         local keys = path:split(".")
         local current = configOverride
@@ -1083,6 +1094,10 @@ local function UpdateESPObj(espObj, position, size, name, distanceStuds, instanc
     -- Exit early if not on screen for 2D elements
     if not onScreen or not position or not size then
         espObj.Container.Visible = false
+        for i = 1, #espObj.CircleLines do
+            espObj.CircleLines[i].Visible = false
+            espObj.CircleOutlines[i].Visible = false
+        end
         return
     end
 
@@ -1149,6 +1164,10 @@ local function UpdateESPObj(espObj, position, size, name, distanceStuds, instanc
             espObj.Lines[i].Visible = false
             espObj.Outlines[i].Visible = false
         end
+        for i = 1, #espObj.CircleLines do
+            espObj.CircleLines[i].Visible = false
+            espObj.CircleOutlines[i].Visible = false
+        end
         espObj.HealthBarOutline.Visible = false
         espObj.HealthText.Visible = false
         espObj.WeaponText.Visible = false
@@ -1180,14 +1199,71 @@ local function UpdateESPObj(espObj, position, size, name, distanceStuds, instanc
     espObj.Lines[4].Position = UDim2.new(0, x + sx, 0, y)
     espObj.Lines[4].Size = UDim2.new(0, t, 0, sy + t)
 
-    -- Outlines logic
+    local boxesEnabled = GetCfg("Boxes")
+    local boxType = GetCfg("BoxType") or "Normal"
+    local useCornerBoxes = boxType == "Corner"
+    local useCircleBoxes = boxType == "Circle"
     local outlinesEnabled = GetCfg("Outlines.Enabled")
     local outlineColor = GetCfg("Outlines.Color")
     local outlineThickness = GetCfg("Outlines.Thickness")
 
+    if useCornerBoxes then
+        local cornerWidth = math.max(math.floor(sx * 0.25), t * 3)
+        local cornerHeight = math.max(math.floor(sy * 0.25), t * 3)
+
+        local cornerData = {
+            { x,                        y,                         cornerWidth, t },
+            { x,                        y,                         t,           cornerHeight },
+            { x + sx - cornerWidth + t, y,                         cornerWidth, t },
+            { x + sx,                   y,                         t,           cornerHeight },
+            { x,                        y + sy,                    cornerWidth, t },
+            { x,                        y + sy - cornerHeight + t, t,           cornerHeight },
+            { x + sx - cornerWidth + t, y + sy,                    cornerWidth, t },
+            { x + sx,                   y + sy - cornerHeight + t, t,           cornerHeight },
+        }
+
+        for i = 1, 8 do
+            local data = cornerData[i]
+            espObj.CornerLines[i].Position = UDim2.new(0, data[1], 0, data[2])
+            espObj.CornerLines[i].Size = UDim2.new(0, data[3], 0, data[4])
+        end
+    elseif useCircleBoxes then
+        local segments = CIRCLE_BOX_SEGMENTS
+        local center = Vector2.new(x + (sx / 2), y + (sy / 2))
+        local radiusInset = math.max(t + outlineThickness, 1)
+        local rx = math.max((sx / 2) - radiusInset, t * 2)
+        local ry = math.max((sy / 2) - radiusInset, t * 2)
+
+        local angleStep = (math.pi * 2) / segments
+        for i = 1, #espObj.CircleLines do
+            local line = espObj.CircleLines[i]
+            local outline = espObj.CircleOutlines[i]
+            if i <= segments then
+                local a1 = (i - 1) * angleStep
+                local a2 = i * angleStep
+                local p1 = center + Vector2.new(math.cos(a1) * rx, math.sin(a1) * ry)
+                local p2 = center + Vector2.new(math.cos(a2) * rx, math.sin(a2) * ry)
+                line.From = p1
+                line.To = p2
+                line.Color = GetCfg("BoxColor")
+                line.Thickness = t
+                line.Visible = boxesEnabled and useCircleBoxes
+
+                outline.From = p1
+                outline.To = p2
+                outline.Color = outlineColor
+                outline.Thickness = t + (outlineThickness * 2)
+                outline.Visible = boxesEnabled and outlinesEnabled and useCircleBoxes
+            else
+                line.Visible = false
+                outline.Visible = false
+            end
+        end
+    end
+
     for i = 1, 4 do
-        espObj.Lines[i].Visible = GetCfg("Boxes")
-        espObj.Outlines[i].Visible = GetCfg("Boxes") and outlinesEnabled
+        espObj.Lines[i].Visible = boxesEnabled and not useCornerBoxes and not useCircleBoxes
+        espObj.Outlines[i].Visible = boxesEnabled and outlinesEnabled and not useCornerBoxes and not useCircleBoxes
 
         espObj.Outlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
         espObj.Outlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
@@ -1195,10 +1271,27 @@ local function UpdateESPObj(espObj, position, size, name, distanceStuds, instanc
         espObj.Outlines[i].BackgroundColor3 = outlineColor
     end
 
+    for i = 1, 8 do
+        espObj.CornerLines[i].Visible = boxesEnabled and useCornerBoxes
+        espObj.CornerOutlines[i].Visible = boxesEnabled and outlinesEnabled and useCornerBoxes
+
+        espObj.CornerOutlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
+        espObj.CornerOutlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
+        espObj.CornerLines[i].BackgroundColor3 = GetCfg("BoxColor")
+        espObj.CornerOutlines[i].BackgroundColor3 = outlineColor
+    end
+
+    if not useCircleBoxes or not boxesEnabled then
+        for i = 1, #espObj.CircleLines do
+            espObj.CircleLines[i].Visible = false
+            espObj.CircleOutlines[i].Visible = false
+        end
+    end
+
     -- BoxFill logic
     local fill = espObj.BoxFill
     local grad = espObj.BoxFillGradient
-    if GetCfg("BoxFill.Enabled") and GetCfg("Boxes") then
+    if GetCfg("BoxFill.Enabled") and boxesEnabled and not useCornerBoxes and not useCircleBoxes then
         fill.Visible = true
         fill.Position = UDim2.new(0, x, 0, y)
         fill.Size = UDim2.new(0, sx, 0, sy)
@@ -1478,11 +1571,11 @@ local function UpdateESPObj(espObj, position, size, name, distanceStuds, instanc
             for _, b in ipairs(espObj.BoneOutlines) do b.Visible = false end
         end
     end
-end
+end)
 --
 
 --// logic
-local function Get2DBoundingBox(instance)
+local Get2DBoundingBox = LPHNoVirtualize(function(instance)
     local rootPart
     if instance:IsA("Model") then
         rootPart = instance:FindFirstChild("HumanoidRootPart") or instance:FindFirstChild("Torso") or
@@ -1578,7 +1671,7 @@ local function Get2DBoundingBox(instance)
         end
         return true, Vector2.new((minX + maxX) / 2, (minY + maxY) / 2), Vector2.new(maxX - minX, maxY - minY)
     end
-end
+end)
 --
 
 --// custom functions logic
@@ -1609,12 +1702,26 @@ local function CheckNames(instance, namesList)
     return false
 end
 
-local function ScanDirectories()
+local function CheckBlockNames(inst, blockList)
+    if not blockList or #blockList == 0 then return false end
+    local current = inst
+    while current and current ~= game do
+        for _, name in ipairs(blockList) do
+            if name ~= "" and current.Name:find(name) then
+                return true
+            end
+        end
+        current = current.Parent
+    end
+    return false
+end
+
+local ScanDirectories = LPHNoVirtualize(function()
     local newTracked = {}
 
     if ESPConfig.Players then
         for _, player in ipairs(Players:GetPlayers()) do
-            if not ESPConfig.LocalPlayer and player == Players.LocalPlayer then continue end
+            if not ESPConfig.LocalPlayer and player == LocalPlayer then continue end
             if player.Character then
                 local humanoid = player.Character:FindFirstChild("Humanoid")
                 if humanoid and humanoid.Health > 0 then
@@ -1648,20 +1755,6 @@ local function ScanDirectories()
             local noStatus = config.NoStatus or false
             local customConfig = config.Config or {}
             local isRecursive = config.Recursive or false
-
-            local function CheckBlockNames(inst, blockList)
-                if not blockList or #blockList == 0 then return false end
-                local current = inst
-                while current and current ~= game do
-                    for _, n in ipairs(blockList) do
-                        if n ~= "" and current.Name:find(n) then
-                            return true
-                        end
-                    end
-                    current = current.Parent
-                end
-                return false
-            end
 
             if config.Multiple then
                 local children = isRecursive and inst:GetDescendants() or inst:GetChildren()
@@ -1736,7 +1829,7 @@ local function ScanDirectories()
             TrackedInstances[inst] = nil
         end
     end
-end
+end)
 
 local lastScan = 0
 local lastRender = 0
