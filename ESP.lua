@@ -37,7 +37,6 @@
 
   Planning to make:
   Offscreen arrows
-  Circle boxes
   Ammo bar
   Armor bar
   new skeleton esp
