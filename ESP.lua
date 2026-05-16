@@ -806,6 +806,7 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     teamText.TextYAlignment = Enum.TextYAlignment.Bottom
     teamText.Visible = false
     espObj.TeamText = teamText
+    espObj.TeamTextStroke = teamText:FindFirstChildOfClass("UIStroke")
 
     local friendlyText = Instance.new("TextLabel")
     SetupLabel(friendlyText)
@@ -813,6 +814,7 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     friendlyText.TextYAlignment = Enum.TextYAlignment.Bottom
     friendlyText.Visible = false
     espObj.FriendlyText = friendlyText
+    espObj.FriendlyTextStroke = friendlyText:FindFirstChildOfClass("UIStroke")
 
     local distText = Instance.new("TextLabel")
     SetupLabel(distText)
@@ -1188,6 +1190,14 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     espObj.FriendlyText.TextSize = textSize
     espObj.FriendlyText.Font = Enum.Font.Code
     espObj.FriendlyText.FontFace = font
+    if espObj.TeamTextStroke then
+        espObj.TeamTextStroke.Thickness = 0.75
+        espObj.TeamTextStroke.Enabled = GetCfg("TextOutline")
+    end
+    if espObj.FriendlyTextStroke then
+        espObj.FriendlyTextStroke.Thickness = 0.75
+        espObj.FriendlyTextStroke.Enabled = GetCfg("TextOutline")
+    end
 
     espObj.DistanceText.TextSize = textSize
     espObj.DistanceText.TextColor3 = textColor
