@@ -1,10 +1,6 @@
 # sensoryESP
 Roblox - LUAU esp.
-
-Loadstring
-```lua
-loadstring(game:HttpGet("https://github.com/rthusrtghdfhtyjkehrfh/sensoryESP/raw/refs/heads/main/ESP.lua"))()
-```
+To use it, execute the ESP loadstring.lua
 
   // dacces ESP //
   // v1.0.0 //
