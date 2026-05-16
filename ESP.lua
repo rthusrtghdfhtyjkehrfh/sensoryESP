@@ -1290,7 +1290,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     -- BoxFill logic
     local fill = espObj.BoxFill
     local grad = espObj.BoxFillGradient
-    if GetCfg("BoxFill.Enabled") and boxesEnabled and not useCornerBoxes and not useCircleBoxes then
+    if GetCfg("BoxFill.Enabled") and boxesEnabled and not useCircleBoxes then
         fill.Visible = true
         fill.Position = UDim2.new(0, x, 0, y)
         fill.Size = UDim2.new(0, sx, 0, sy)
