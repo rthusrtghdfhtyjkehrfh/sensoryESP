@@ -591,6 +591,13 @@ end
 --
 
 --// fonts
+local _fontMap = {
+    ["Proggy Clean"] = Enum.Font.Code,
+    ["Smallest Pixel-7"] = Enum.Font.Legacy,
+    ["Tahoma"] = Enum.Font.Arial,
+    ["Minecraftia"] = Enum.Font.SourceSans,
+    ["Tahoma Modern Bold"] = Enum.Font.ArialBold,
+}
 local ExecutorName = identifyexecutor and identifyexecutor() or "Unknown"
 local FolderLocation = "sensoryESP"
 local FontsToDownload = {
@@ -667,15 +674,21 @@ local function InitFonts()
             pcall(writefile, fontPath, HttpService:JSONEncode(Config))
         end
 
+        local ok, font
         if isfile and getcustomasset and isfile(fontPath) then
-            local ok, asset = pcall(getcustomasset, fontPath)
+            local asset
+            ok, asset = pcall(getcustomasset, fontPath)
             if ok then
-                ESPFonts.Loaded[Name] = Font.new(asset, Enum.FontWeight.Regular)
-            else
-                ESPFonts.Loaded[Name] = Font.new(Enum.Font.SourceSans, Enum.FontWeight.Regular)
+                ok, font = pcall(Font.new, asset, Enum.FontWeight.Regular)
             end
-        else
-            ESPFonts.Loaded[Name] = Font.new(Enum.Font.SourceSans, Enum.FontWeight.Regular)
+        end
+
+        if not ok then
+            ok, font = pcall(Font.fromEnum, _fontMap[Name] or Enum.Font.SourceSans)
+        end
+
+        if ok then
+            ESPFonts.Loaded[Name] = font
         end
     end
 end
@@ -781,7 +794,7 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     local function SetupLabel(label)
         label.BackgroundTransparency = 1
         label.Size = UDim2.new(0, 100, 0, ESPConfig.TextSize)
-        label.Font = Enum.Font.Code
+        label.Font = _fontMap[ESPConfig.Font] or Enum.Font.Code
         pcall(function()
             if ESPFonts.Loaded[ESPConfig.Font] then
                 label.FontFace = ESPFonts.Loaded[ESPConfig.Font]
@@ -795,7 +808,7 @@ local CreateESPObj = LPHNoVirtualize(function(name)
 
         local stroke = Instance.new("UIStroke")
         stroke.Thickness = 1
-        stroke.Color = ESPConfig.Outlines.Color
+        stroke.Color = ESPConfig.TextOutlineColor or ESPConfig.Outlines.Color
         stroke.LineJoinMode = Enum.LineJoinMode.Miter
         stroke.Enabled = ESPConfig.TextOutline
         stroke.Parent = label
@@ -869,7 +882,12 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         local flag = Instance.new("TextLabel")
         SetupLabel(flag)
         flag.TextSize = ESPConfig.Flags.TextSize
-        flag.FontFace = ESPFonts.Loaded[ESPConfig.Flags.Font] or Font.fromEnum(Enum.Font.SourceSans)
+        flag.Font = _fontMap[ESPConfig.Flags.Font] or Enum.Font.Code
+        pcall(function()
+            if ESPFonts.Loaded[ESPConfig.Flags.Font] then
+                flag.FontFace = ESPFonts.Loaded[ESPConfig.Flags.Font]
+            end
+        end)
         flag.Visible = false
         espObj.FlagLabels[i] = flag
     end
@@ -1173,17 +1191,23 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     -- Update Label Properties
     espObj.Text.TextSize = textSize
     espObj.Text.TextColor3 = textColor
-    espObj.Text.Font = Enum.Font.Code
+    espObj.Text.Font = _fontMap[GetCfg("Font")] or Enum.Font.Code
     espObj.Text.FontFace = font
+
+    local _s = espObj.Text:FindFirstChildOfClass("UIStroke")
+    if _s then
+        _s.Color = GetCfg("TextOutlineColor") or GetCfg("Outlines.Color")
+        _s.Enabled = GetCfg("TextOutline")
+    end
 
     espObj.DistanceText.TextSize = textSize
     espObj.DistanceText.TextColor3 = textColor
-    espObj.DistanceText.Font = Enum.Font.Code
+    espObj.DistanceText.Font = _fontMap[GetCfg("Font")] or Enum.Font.Code
     espObj.DistanceText.FontFace = font
 
     espObj.WeaponText.TextSize = textSize
     espObj.WeaponText.TextColor3 = textColor
-    espObj.WeaponText.Font = Enum.Font.Code
+    espObj.WeaponText.Font = _fontMap[GetCfg("Font")] or Enum.Font.Code
     espObj.WeaponText.FontFace = font
 
     local px, py = math.floor(position.X), math.floor(position.Y)
@@ -1635,6 +1659,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     label.Visible = true
                     label.Text = data.text
                     label.TextColor3 = data.color
+                    label.Font = _fontMap[GetCfg("Flags.Font")] or Enum.Font.Code
                     label.FontFace = ESPFonts.Loaded[GetCfg("Flags.Font")] or Font.fromEnum(Enum.Font.SourceSans)
                     label.TextSize = GetCfg("Flags.TextSize")
                     label.TextXAlignment = isRight and Enum.TextXAlignment.Left or Enum.TextXAlignment.Right
