@@ -598,8 +598,7 @@ local _fontMap = {
     ["Minecraftia"] = Enum.Font.SourceSans,
     ["Tahoma Modern Bold"] = Enum.Font.ArialBold,
 }
-local ExecutorName = identifyexecutor and identifyexecutor() or "Unknown"
-local FolderLocation = "sensoryESP"
+
 local FontsToDownload = {
     ["Tahoma"] = { Link = "https://github.com/LuckyHub1/LuckyHub/raw/main/zekton_rg.ttf" },
     ["Minecraftia"] = { Link = "https://github.com/LuckyHub1/LuckyHub/raw/refs/heads/main/Minecraftia.ttf" },
@@ -644,29 +643,38 @@ local function FindPartByPatterns(Character, Pattern)
     end
     return nil
 end
-pcall(function()
-    if isfolder then
-        if not isfolder(FolderLocation .. "/Fonts") then
-            makefolder(FolderLocation .. "/Fonts")
-        end
-    end
-    for Name, Table in pairs(FontsToDownload) do
-        local ttfPath  = FolderLocation .. "/Fonts/" .. Name .. ".ttf"
-        local fontPath = FolderLocation .. "/Fonts/" .. Name .. ".font"
+local function SanitizeName(n)
+    return "sESP_" .. n:gsub("%s+", "")
+end
 
-        if isfile and not isfile(ttfPath) and writefile and game.HttpGet then
-            pcall(writefile, ttfPath, game:HttpGet(Table.Link))
+pcall(function()
+    for Name, Table in pairs(FontsToDownload) do
+        local safeName = SanitizeName(Name)
+        local ttfPath  = safeName .. ".ttf"
+        local fontPath = safeName .. ".font"
+
+        if writefile and game.HttpGet then
+            if not isfile or not isfile(ttfPath) then
+                pcall(writefile, ttfPath, game:HttpGet(Table.Link))
+            end
         end
-        if isfile and (not isfile(fontPath) or ExecutorName == "Potassium") and writefile then
-            local config = { name = Name, faces = { { name = "Regular", weight = 400, style = "normal", assetId = getcustomasset and getcustomasset(ttfPath) or "rbxassetid://0" } } }
-            pcall(writefile, fontPath, HttpService:JSONEncode(config))
-        end
-        if isfile and getcustomasset and isfile(fontPath) then
-            local ok, asset = pcall(getcustomasset, fontPath)
+
+        if getcustomasset and isfile and isfile(ttfPath) then
+            local ok, asset = pcall(getcustomasset, ttfPath)
             if ok then
                 local ok2, font = pcall(Font.new, asset, Enum.FontWeight.Regular)
                 if ok2 and font then
                     ESPFonts.Loaded[Name] = font
+                elseif writefile then
+                    local config = { name = safeName, faces = { { name = "Regular", weight = 400, style = "normal", assetId = asset } } }
+                    pcall(writefile, fontPath, HttpService:JSONEncode(config))
+                    local ok3, asset2 = pcall(getcustomasset, fontPath)
+                    if ok3 then
+                        local ok4, font2 = pcall(Font.new, asset2, Enum.FontWeight.Regular)
+                        if ok4 and font2 then
+                            ESPFonts.Loaded[Name] = font2
+                        end
+                    end
                 end
             end
         end
