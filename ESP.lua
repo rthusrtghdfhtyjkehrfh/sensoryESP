@@ -1,24 +1,25 @@
 --[[
-v1.0.5
- ██████╗ ██████╗ ███████╗███╗   ██╗███████╗███████╗██████╗ 
-██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔════╝██╔══██╗
-██║   ██║██████╔╝█████╗  ██╔██╗ ██║█████╗  ███████╗██████╔╝
-██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██╔══╝  ╚════██║██╔═══╝ 
-╚██████╔╝██║     ███████╗██║ ╚████║███████╗███████║██║     
- ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚══════╝╚══════╝╚═╝     
+  // dacces ESP //
+  // v1.0.5 //
+  // 16/5/2026 //
 
- ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗
-██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝
-██║     ██║     ███████║██║   ██║██║  ██║█████╗  
-██║     ██║     ██╔══██║██║   ██║██║  ██║██╔══╝  
-╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗
- ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝
- ██████╗ ██████╗ ██████╗ ███████╗                
-██╔════╝██╔═══██╗██╔══██╗██╔════╝                
-██║     ██║   ██║██║  ██║█████╗                  
-██║     ██║   ██║██║  ██║██╔══╝                  
-╚██████╗╚██████╔╝██████╔╝███████╗                
- ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝                
+  Made with love by Dacces, Gemini 3 flash, Gemini 3.1 high / low, and Claude Sonnet 4.6
+  This script is free to use, and could not be sold. if you bought this script, you got scammed.
+  If you say that you OWN or MADE this script, id be not happy and be mad. don't do it. please.
+  You can easily and freely use it on your own projects. I dont care. Or even paste or skid it.
+  Every script that has been usen or taken that is not ai generated, were from all open sources.
+
+  Inspired by:
+  https://v3rm.net/threads/chatgpt-esp-by-me.28629/#post-242437 > https://raw.githubusercontent.com/emptyusesdx9/astral.rip/refs/heads/main/esp
+
+  Credits:
+  actual people: dacces / finobe / dualesp / nocturnal
+  AIs used: gemini 3 flash, gemini 3.1 high / low, claude sonnet 4.6
+  font credits
+  f1nobe and dual esp guy
+
+  Purpose of this script?
+  Proves that no ESP will be unique.
 ]]
 
 if not LPH_OBFUSCATED then
@@ -580,6 +581,13 @@ local function CompactTeamName(teamName)
     end
     return table.concat(compact)
 end
+
+local function ColorToHex(color)
+    local r = math.clamp(math.floor(color.R * 255 + 0.5), 0, 255)
+    local g = math.clamp(math.floor(color.G * 255 + 0.5), 0, 255)
+    local b = math.clamp(math.floor(color.B * 255 + 0.5), 0, 255)
+    return string.format("#%02X%02X%02X", r, g, b)
+end
 --
 
 --// fonts
@@ -796,24 +804,14 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     local nameText = Instance.new("TextLabel")
     SetupLabel(nameText)
     nameText.TextYAlignment = Enum.TextYAlignment.Bottom
+    nameText.RichText = true
     nameText.Text = name
     espObj.Text = nameText
 
-    local teamText = Instance.new("TextLabel")
-    SetupLabel(teamText)
-    teamText.TextXAlignment = Enum.TextXAlignment.Left
-    teamText.TextYAlignment = Enum.TextYAlignment.Bottom
-    teamText.Visible = false
-    espObj.TeamText = teamText
-    espObj.TeamTextStroke = teamText:FindFirstChildOfClass("UIStroke")
-
-    local friendlyText = Instance.new("TextLabel")
-    SetupLabel(friendlyText)
-    friendlyText.TextXAlignment = Enum.TextXAlignment.Left
-    friendlyText.TextYAlignment = Enum.TextYAlignment.Bottom
-    friendlyText.Visible = false
-    espObj.FriendlyText = friendlyText
-    espObj.FriendlyTextStroke = friendlyText:FindFirstChildOfClass("UIStroke")
+    espObj.TeamText = nil
+    espObj.TeamTextStroke = nil
+    espObj.FriendlyText = nil
+    espObj.FriendlyTextStroke = nil
 
     local distText = Instance.new("TextLabel")
     SetupLabel(distText)
@@ -1155,12 +1153,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     -- Exit early if not on screen for 2D elements
     if not onScreen or not position or not size then
         espObj.Container.Visible = false
-        if espObj.TeamText then
-            espObj.TeamText.Visible = false
-        end
-        if espObj.FriendlyText then
-            espObj.FriendlyText.Visible = false
-        end
         for i = 1, #espObj.CircleLines do
             espObj.CircleLines[i].Visible = false
             espObj.CircleOutlines[i].Visible = false
@@ -1183,20 +1175,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     espObj.Text.TextColor3 = textColor
     espObj.Text.Font = Enum.Font.Code
     espObj.Text.FontFace = font
-    espObj.TeamText.TextSize = GetCfg("TeamIndicator.TextSize") or textSize
-    espObj.TeamText.Font = Enum.Font.Code
-    espObj.TeamText.FontFace = font
-    espObj.FriendlyText.TextSize = textSize
-    espObj.FriendlyText.Font = Enum.Font.Code
-    espObj.FriendlyText.FontFace = font
-    if espObj.TeamTextStroke then
-        espObj.TeamTextStroke.Thickness = 0.75
-        espObj.TeamTextStroke.Enabled = GetCfg("TextOutline")
-    end
-    if espObj.FriendlyTextStroke then
-        espObj.FriendlyTextStroke.Thickness = 0.75
-        espObj.FriendlyTextStroke.Enabled = GetCfg("TextOutline")
-    end
 
     espObj.DistanceText.TextSize = textSize
     espObj.DistanceText.TextColor3 = textColor
@@ -1244,12 +1222,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     end
 
     if isCheap then
-        if espObj.TeamText then
-            espObj.TeamText.Visible = false
-        end
-        if espObj.FriendlyText then
-            espObj.FriendlyText.Visible = false
-        end
         for i = 1, 4 do
             espObj.Lines[i].Visible = false
             espObj.Outlines[i].Visible = false
@@ -1272,8 +1244,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
         espObj.Text.Text = name .. " " .. distVal .. GetCfg("Distance.Ending")
         espObj.Text.Position = UDim2.new(0, px - 50, 0, py - (textSize / 2))
-        espObj.TeamText.Visible = false
-        espObj.FriendlyText.Visible = false
         espObj.DistanceText.Visible = false
         return
     end
@@ -1414,30 +1384,20 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     end
 
     local nameY = y - textSize - (GetCfg("TextGap") or 0) - topOffset
-    espObj.Text.Position = UDim2.new(0, px - 50, 0, nameY)
-    local nameWidth = math.max(espObj.Text.TextBounds.X, 1)
-    local rightTextX = px + math.floor(nameWidth / 2) + 6
-    local leftTextX = px - math.floor(nameWidth / 2) - 6
-
     local teamOwner = instance:IsA("Model") and Players:GetPlayerFromCharacter(instance) or nil
+    local leftTags = {}
+    local rightTags = {}
+
     if GetCfg("TeamIndicator.Enabled") and teamOwner and teamOwner.Team then
         local teamColor = GetCfg("TeamIndicator.UseTeamColor") and teamOwner.TeamColor.Color or GetCfg("TeamIndicator.Color")
         local teamName = teamOwner.Team.Name
         local compactTeam = GetCfg("TeamIndicator.Compact") and CompactTeamName(teamName) or teamName
-        local teamText = "[" .. compactTeam .. "]"
-        espObj.TeamText.Text = teamText
-        espObj.TeamText.TextColor3 = teamColor
-        espObj.TeamText.Visible = true
-        local teamWidth = math.max(espObj.TeamText.TextBounds.X, 1)
+        local teamTag = string.format('<font color="%s">[%s]</font>', ColorToHex(teamColor), compactTeam)
         if GetCfg("TeamIndicator.Position") == "Left" then
-            espObj.TeamText.Position = UDim2.new(0, leftTextX - teamWidth, 0, nameY)
-            leftTextX = leftTextX - teamWidth - 6
+            table.insert(leftTags, teamTag)
         else
-            espObj.TeamText.Position = UDim2.new(0, rightTextX, 0, nameY)
-            rightTextX = rightTextX + teamWidth + 6
+            table.insert(rightTags, teamTag)
         end
-    else
-        espObj.TeamText.Visible = false
     end
 
     local isFriendly = false
@@ -1456,21 +1416,24 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     end
 
     if isFriendly then
-        local friendlyText = GetCfg("FriendlyIndicator.Text")
-        espObj.FriendlyText.Text = friendlyText
-        espObj.FriendlyText.TextColor3 = GetCfg("FriendlyIndicator.Color")
-        local friendlyWidth = math.max(espObj.FriendlyText.TextBounds.X, 1)
+        local friendlyTag = string.format('<font color="%s">%s</font>', ColorToHex(GetCfg("FriendlyIndicator.Color")), GetCfg("FriendlyIndicator.Text"))
         if GetCfg("FriendlyIndicator.Position") == "Left" then
-            espObj.FriendlyText.Position = UDim2.new(0, leftTextX - friendlyWidth, 0, nameY)
-            leftTextX = leftTextX - friendlyWidth - 6
+            table.insert(leftTags, friendlyTag)
         else
-            espObj.FriendlyText.Position = UDim2.new(0, rightTextX, 0, nameY)
-            rightTextX = rightTextX + friendlyWidth + 6
+            table.insert(rightTags, friendlyTag)
         end
-        espObj.FriendlyText.Visible = true
-    else
-        espObj.FriendlyText.Visible = false
     end
+
+    local finalNameText = name
+    if #leftTags > 0 then
+        finalNameText = table.concat(leftTags, " ") .. " " .. finalNameText
+    end
+    if #rightTags > 0 then
+        finalNameText = finalNameText .. " " .. table.concat(rightTags, " ")
+    end
+
+    espObj.Text.Text = finalNameText
+    espObj.Text.Position = UDim2.new(0, px - 50, 0, nameY)
 
     local currentBottomY = y + sy + (GetCfg("Distance.Gap") or 0) + bottomOffset
     if GetCfg("Distance.Enabled") then
