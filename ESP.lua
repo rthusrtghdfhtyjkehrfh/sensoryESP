@@ -643,38 +643,22 @@ local function FindPartByPatterns(Character, Pattern)
     end
     return nil
 end
-local function SanitizeName(n)
-    return "sESP_" .. n:gsub("%s+", "")
-end
-
 pcall(function()
     for Name, Table in pairs(FontsToDownload) do
-        local safeName = SanitizeName(Name)
-        local ttfPath  = safeName .. ".ttf"
-        local fontPath = safeName .. ".font"
-
-        if writefile and game.HttpGet then
-            if not isfile or not isfile(ttfPath) then
-                pcall(writefile, ttfPath, game:HttpGet(Table.Link))
-            end
+        local fn = Name:gsub("%s+", "")
+        if isfile and not isfile(fn .. ".ttf") and writefile and game.HttpGet then
+            writefile(fn .. ".ttf", game:HttpGet(Table.Link))
         end
-
-        if getcustomasset and isfile and isfile(ttfPath) then
-            local ok, asset = pcall(getcustomasset, ttfPath)
+        if isfile and not isfile(fn .. ".font") and writefile then
+            local config = { name = fn, faces = {{ name = "Regular", weight = 400, style = "normal", assetId = getcustomasset(fn .. ".ttf") }}}
+            writefile(fn .. ".font", HttpService:JSONEncode(config))
+        end
+        if isfile and getcustomasset and isfile(fn .. ".font") then
+            local ok, asset = pcall(getcustomasset, fn .. ".font")
             if ok then
                 local ok2, font = pcall(Font.new, asset, Enum.FontWeight.Regular)
                 if ok2 and font then
                     ESPFonts.Loaded[Name] = font
-                elseif writefile then
-                    local config = { name = safeName, faces = { { name = "Regular", weight = 400, style = "normal", assetId = asset } } }
-                    pcall(writefile, fontPath, HttpService:JSONEncode(config))
-                    local ok3, asset2 = pcall(getcustomasset, fontPath)
-                    if ok3 then
-                        local ok4, font2 = pcall(Font.new, asset2, Enum.FontWeight.Regular)
-                        if ok4 and font2 then
-                            ESPFonts.Loaded[Name] = font2
-                        end
-                    end
                 end
             end
         end
