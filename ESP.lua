@@ -598,8 +598,7 @@ local _fontMap = {
     ["Minecraftia"] = Enum.Font.SourceSans,
     ["Tahoma Modern Bold"] = Enum.Font.ArialBold,
 }
-local ExecutorName = identifyexecutor and identifyexecutor() or "Unknown"
-local FolderLocation = "sensoryESP"
+
 local FontsToDownload = {
     ["Tahoma"] = { Link = "https://github.com/LuckyHub1/LuckyHub/raw/main/zekton_rg.ttf" },
     ["Minecraftia"] = { Link = "https://github.com/LuckyHub1/LuckyHub/raw/refs/heads/main/Minecraftia.ttf" },
@@ -644,55 +643,43 @@ local function FindPartByPatterns(Character, Pattern)
     end
     return nil
 end
-local function InitFonts()
-    local baseFolder = FolderLocation
-    local fontsFolder = FolderLocation .. "/Fonts"
+local function SanitizeName(n)
+    return "sESP_" .. n:gsub("%s+", "")
+end
 
-    if isfolder then
-        if not isfolder(baseFolder) then makefolder(baseFolder) end
-        if not isfolder(fontsFolder) then makefolder(fontsFolder) end
-    end
-
+pcall(function()
     for Name, Table in pairs(FontsToDownload) do
-        local ttfPath  = fontsFolder .. "/" .. Name .. ".ttf"
-        local fontPath = fontsFolder .. "/" .. Name .. ".font"
+        local safeName = SanitizeName(Name)
+        local ttfPath  = safeName .. ".ttf"
+        local fontPath = safeName .. ".font"
 
-        if isfile and not isfile(ttfPath) and writefile and game.HttpGet then
-            pcall(writefile, ttfPath, game:HttpGet(Table.Link))
-        end
-
-        if isfile and (not isfile(fontPath) or ExecutorName == "Potassium") and writefile then
-            local Config = {
-                name = Name,
-                faces = { {
-                    name = "Regular",
-                    weight = 400,
-                    style = "normal",
-                    assetId = getcustomasset and getcustomasset(ttfPath) or "rbxassetid://0"
-                } }
-            }
-            pcall(writefile, fontPath, HttpService:JSONEncode(Config))
-        end
-
-        local ok, font
-        if isfile and getcustomasset and isfile(fontPath) then
-            local asset
-            ok, asset = pcall(getcustomasset, fontPath)
-            if ok then
-                ok, font = pcall(Font.new, asset, Enum.FontWeight.Regular)
+        if writefile and game.HttpGet then
+            if not isfile or not isfile(ttfPath) then
+                pcall(writefile, ttfPath, game:HttpGet(Table.Link))
             end
         end
 
-        if not ok then
-            ok, font = pcall(Font.fromEnum, _fontMap[Name] or Enum.Font.SourceSans)
-        end
-
-        if ok then
-            ESPFonts.Loaded[Name] = font
+        if getcustomasset and isfile and isfile(ttfPath) then
+            local ok, asset = pcall(getcustomasset, ttfPath)
+            if ok then
+                local ok2, font = pcall(Font.new, asset, Enum.FontWeight.Regular)
+                if ok2 and font then
+                    ESPFonts.Loaded[Name] = font
+                elseif writefile then
+                    local config = { name = safeName, faces = { { name = "Regular", weight = 400, style = "normal", assetId = asset } } }
+                    pcall(writefile, fontPath, HttpService:JSONEncode(config))
+                    local ok3, asset2 = pcall(getcustomasset, fontPath)
+                    if ok3 then
+                        local ok4, font2 = pcall(Font.new, asset2, Enum.FontWeight.Regular)
+                        if ok4 and font2 then
+                            ESPFonts.Loaded[Name] = font2
+                        end
+                    end
+                end
+            end
         end
     end
-end
-pcall(InitFonts)
+end)
 --
 
 --// variables
@@ -795,11 +782,9 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         label.BackgroundTransparency = 1
         label.Size = UDim2.new(0, 100, 0, ESPConfig.TextSize)
         label.Font = _fontMap[ESPConfig.Font] or Enum.Font.Code
-        pcall(function()
-            if ESPFonts.Loaded[ESPConfig.Font] then
-                label.FontFace = ESPFonts.Loaded[ESPConfig.Font]
-            end
-        end)
+        if ESPFonts.Loaded[ESPConfig.Font] then
+            label.FontFace = ESPFonts.Loaded[ESPConfig.Font]
+        end
         label.TextSize = ESPConfig.TextSize
         label.TextColor3 = ESPConfig.TextColor
         label.TextStrokeTransparency = 1
@@ -883,11 +868,9 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         SetupLabel(flag)
         flag.TextSize = ESPConfig.Flags.TextSize
         flag.Font = _fontMap[ESPConfig.Flags.Font] or Enum.Font.Code
-        pcall(function()
-            if ESPFonts.Loaded[ESPConfig.Flags.Font] then
-                flag.FontFace = ESPFonts.Loaded[ESPConfig.Flags.Font]
-            end
-        end)
+        if ESPFonts.Loaded[ESPConfig.Flags.Font] then
+            flag.FontFace = ESPFonts.Loaded[ESPConfig.Flags.Font]
+        end
         flag.Visible = false
         espObj.FlagLabels[i] = flag
     end
@@ -1186,13 +1169,13 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     local o = GetCfg("Outlines.Thickness")
     local textSize = GetCfg("TextSize")
     local textColor = GetCfg("TextColor")
-    local font = ESPFonts.Loaded[GetCfg("Font")] or Font.fromEnum(Enum.Font.SourceSans)
-
     -- Update Label Properties
     espObj.Text.TextSize = textSize
     espObj.Text.TextColor3 = textColor
     espObj.Text.Font = _fontMap[GetCfg("Font")] or Enum.Font.Code
-    espObj.Text.FontFace = font
+    if ESPFonts.Loaded[GetCfg("Font")] then
+        espObj.Text.FontFace = ESPFonts.Loaded[GetCfg("Font")]
+    end
 
     local _s = espObj.Text:FindFirstChildOfClass("UIStroke")
     if _s then
@@ -1203,12 +1186,16 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     espObj.DistanceText.TextSize = textSize
     espObj.DistanceText.TextColor3 = textColor
     espObj.DistanceText.Font = _fontMap[GetCfg("Font")] or Enum.Font.Code
-    espObj.DistanceText.FontFace = font
+    if ESPFonts.Loaded[GetCfg("Font")] then
+        espObj.DistanceText.FontFace = ESPFonts.Loaded[GetCfg("Font")]
+    end
 
     espObj.WeaponText.TextSize = textSize
     espObj.WeaponText.TextColor3 = textColor
     espObj.WeaponText.Font = _fontMap[GetCfg("Font")] or Enum.Font.Code
-    espObj.WeaponText.FontFace = font
+    if ESPFonts.Loaded[GetCfg("Font")] then
+        espObj.WeaponText.FontFace = ESPFonts.Loaded[GetCfg("Font")]
+    end
 
     local px, py = math.floor(position.X), math.floor(position.Y)
     local sx, sy = math.floor(size.X), math.floor(size.Y)
@@ -1660,7 +1647,9 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     label.Text = data.text
                     label.TextColor3 = data.color
                     label.Font = _fontMap[GetCfg("Flags.Font")] or Enum.Font.Code
-                    label.FontFace = ESPFonts.Loaded[GetCfg("Flags.Font")] or Font.fromEnum(Enum.Font.SourceSans)
+                    if ESPFonts.Loaded[GetCfg("Flags.Font")] then
+                        label.FontFace = ESPFonts.Loaded[GetCfg("Flags.Font")]
+                    end
                     label.TextSize = GetCfg("Flags.TextSize")
                     label.TextXAlignment = isRight and Enum.TextXAlignment.Left or Enum.TextXAlignment.Right
                     label.Position = UDim2.new(0, fx, 0,
