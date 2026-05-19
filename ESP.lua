@@ -249,6 +249,7 @@ local ESPConfig = {
     },
 
     -- names
+    Names = true,
     TextSize = 12,
     TextColor = Color3.fromRGB(255, 255, 255),
     TextOutline = true,
@@ -788,6 +789,7 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     nameText.TextYAlignment = Enum.TextYAlignment.Bottom
     nameText.RichText = true
     nameText.Text = name
+    nameText.Visible = ESPConfig.Names
     espObj.Text = nameText
 
     espObj.TeamText = nil
@@ -1147,7 +1149,9 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
     espObj.Container.Visible = true
     espObj.Container.ZIndex = nonHuman and 1 or 10
-    espObj.Text.Text = name
+    if GetCfg("Names") then
+        espObj.Text.Text = name
+    end
 
     local t = GetCfg("BoxThickness")
     local o = GetCfg("Outlines.Thickness")
@@ -1239,6 +1243,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
         espObj.Text.Text = name .. " " .. distVal .. GetCfg("Distance.Ending")
         espObj.Text.Position = UDim2.new(0, px - 50, 0, py - (textSize / 2))
+        espObj.Text.Visible = GetCfg("Names")
         espObj.DistanceText.Visible = false
         return
     end
@@ -1427,8 +1432,13 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         finalNameText = finalNameText .. " " .. table.concat(rightTags, " ")
     end
 
-    espObj.Text.Text = finalNameText
-    espObj.Text.Position = UDim2.new(0, px - 50, 0, nameY)
+    if GetCfg("Names") then
+        espObj.Text.Text = finalNameText
+        espObj.Text.Position = UDim2.new(0, px - 50, 0, nameY)
+        espObj.Text.Visible = true
+    else
+        espObj.Text.Visible = false
+    end
 
     local currentBottomY = y + sy + (GetCfg("Distance.Gap") or 0) + bottomOffset
     if GetCfg("Distance.Enabled") then
