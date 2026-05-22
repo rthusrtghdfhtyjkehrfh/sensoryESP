@@ -168,7 +168,7 @@ esp:Load({
     Chams = {
         Enabled = true,
 
-        Type = "Highlight",
+        Type = "MeshChams",
 
         Highlight = {
             FillColor = Color3.fromRGB(255,255,255),
@@ -181,18 +181,18 @@ esp:Load({
         },
 
         Adornment = {
-            Color = Color3.fromRGB(59,144,204),
-            VisibleColor = Color3.fromRGB(59,204,90),
+            Color = Color3.fromRGB(255,255,255),
+            VisibleColor = Color3.fromRGB(0,255,0),
 
-            Transparency = 0.7,
+            Transparency = 0.5,
 
             AlwaysOnTop = true,
             VisibleCheck = false,
         },
 
         MeshChams = {
-            FillColor = Color3.fromRGB(59,144,204),
-            FillTransparency = 0.6,
+            FillColor = Color3.fromRGB(255,255,255),
+            FillTransparency = 0.5,
 
             OutlineColor = Color3.fromRGB(255,255,255),
             OutlineTransparency = 0,
