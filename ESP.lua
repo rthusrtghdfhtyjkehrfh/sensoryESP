@@ -196,6 +196,7 @@ local ESPConfig = {
     LocalPlayer = false,
     LimitFPS = 70, -- Set to 0 to disable limit
     DynamicBoxes = true,
+    DynamicBoxesCheap = false,           -- needs DynamicBoxes enabled, only tracks main parts
     VisibilityCheckRate = 0.3,
 
     -- boxes
@@ -1857,13 +1858,23 @@ local Get2DBoundingBox = LPHNoVirtualize(function(instance)
         end
         return true, Vector2.new((minX + maxX) / 2, (minY + maxY) / 2), Vector2.new(maxX - minX, maxY - minY)
     else
-        -- DYNAMIC BOX (Wraps every moving part)
+        -- DYNAMIC BOX
         local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
         local parts = {}
         if instance:IsA("Model") then
-            for _, v in ipairs(instance:GetChildren()) do
-                if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" and v.Transparency ~= 1 then
-                    table.insert(parts, v)
+            if ESPConfig.DynamicBoxesCheap then
+                local cheapParts = { "Head", "Torso", "UpperTorso", "LowerTorso", "Left Arm", "Right Arm", "Left Leg", "Right Leg", "LeftUpperArm", "RightUpperArm", "LeftUpperLeg", "RightUpperLeg" }
+                for _, name in ipairs(cheapParts) do
+                    local v = instance:FindFirstChild(name)
+                    if v and v:IsA("BasePart") and v.Transparency ~= 1 then
+                        table.insert(parts, v)
+                    end
+                end
+            else
+                for _, v in ipairs(instance:GetChildren()) do
+                    if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" and v.Transparency ~= 1 then
+                        table.insert(parts, v)
+                    end
                 end
             end
         else
