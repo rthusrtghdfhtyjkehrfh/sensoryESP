@@ -1859,22 +1859,27 @@ local Get2DBoundingBox = LPHNoVirtualize(function(instance)
         return true, Vector2.new((minX + maxX) / 2, (minY + maxY) / 2), Vector2.new(maxX - minX, maxY - minY)
     else
         -- DYNAMIC BOX
+        local humanoid = instance:IsA("Model") and instance:FindFirstChild("Humanoid")
+
+        if ESPConfig.DynamicBoxesCheap and humanoid then
+            -- head to feet, way less calls
+            local head = instance:FindFirstChild("Head")
+            local foot = instance:FindFirstChild("LeftFoot") or instance:FindFirstChild("RightFoot") or
+                         instance:FindFirstChild("Left Leg") or instance:FindFirstChild("Right Leg")
+            local topPos = head and head.Position or (rootPart.Position + Vector3.new(0, 3, 0))
+            local botPos = foot and foot.Position or (rootPart.Position - Vector3.new(0, 3, 0))
+            local top2D = Camera:WorldToViewportPoint(topPos)
+            local bot2D = Camera:WorldToViewportPoint(botPos)
+            local height = math.abs(top2D.Y - bot2D.Y)
+            return true, Vector2.new(position.X, (top2D.Y + bot2D.Y) / 2), Vector2.new(height * 0.6, height)
+        end
+
         local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
         local parts = {}
         if instance:IsA("Model") then
-            if ESPConfig.DynamicBoxesCheap then
-                local cheapParts = { "Head", "Torso", "UpperTorso", "LowerTorso", "Left Arm", "Right Arm", "Left Leg", "Right Leg", "LeftUpperArm", "RightUpperArm", "LeftUpperLeg", "RightUpperLeg" }
-                for _, name in ipairs(cheapParts) do
-                    local v = instance:FindFirstChild(name)
-                    if v and v:IsA("BasePart") and v.Transparency ~= 1 then
-                        table.insert(parts, v)
-                    end
-                end
-            else
-                for _, v in ipairs(instance:GetChildren()) do
-                    if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" and v.Transparency ~= 1 then
-                        table.insert(parts, v)
-                    end
+            for _, v in ipairs(instance:GetChildren()) do
+                if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" and v.Transparency ~= 1 then
+                    table.insert(parts, v)
                 end
             end
         else
