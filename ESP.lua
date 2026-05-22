@@ -274,6 +274,9 @@ local ESPConfig = {
     Weapon = {
         Enabled = true,
         Gap = 1,
+        Font = "Proggy Clean",
+        TextSize = 12,
+        Color = Color3.fromRGB(255, 255, 255),
         InventoryPath = "ReplicatedStorage.Players.%NAME%.Inventory",
         UseToolFallback = true,
     },
@@ -282,6 +285,7 @@ local ESPConfig = {
     Flags = {
         Enabled = true,
         Position = "Right",
+        Gap = 2,
         SideGap = 4,
         TextGap = 2,
         Font = "Smallest Pixel-7",
@@ -316,6 +320,8 @@ local ESPConfig = {
         StudsPerMeter = 3,
         Ending = "",
         Gap = 3,
+        Font = "Proggy Clean",
+        TextSize = 12,
         Color = Color3.fromRGB(255, 255, 255),
     },
 
@@ -1196,18 +1202,26 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         _s.Enabled = GetCfg("TextOutline")
     end
 
-    espObj.DistanceText.TextSize = textSize
-    espObj.DistanceText.TextColor3 = GetCfg("Distance.Color")
-    espObj.DistanceText.Font = fontObj
-    if fontLoaded then
-        espObj.DistanceText.FontFace = fontLoaded
+    do
+        local distFont = GetCfg("Distance.Font")
+        local distFontObj = _fontMap[distFont] or Enum.Font.Code
+        espObj.DistanceText.TextSize = GetCfg("Distance.TextSize") or textSize
+        espObj.DistanceText.TextColor3 = GetCfg("Distance.Color")
+        espObj.DistanceText.Font = distFontObj
+        if ESPFonts.Loaded[distFont] then
+            espObj.DistanceText.FontFace = ESPFonts.Loaded[distFont]
+        end
     end
 
-    espObj.WeaponText.TextSize = textSize
-    espObj.WeaponText.TextColor3 = textColor
-    espObj.WeaponText.Font = fontObj
-    if fontLoaded then
-        espObj.WeaponText.FontFace = fontLoaded
+    do
+        local wepFont = GetCfg("Weapon.Font")
+        local wepFontObj = _fontMap[wepFont] or Enum.Font.Code
+        espObj.WeaponText.TextSize = GetCfg("Weapon.TextSize") or textSize
+        espObj.WeaponText.TextColor3 = GetCfg("Weapon.Color")
+        espObj.WeaponText.Font = wepFontObj
+        if ESPFonts.Loaded[wepFont] then
+            espObj.WeaponText.FontFace = ESPFonts.Loaded[wepFont]
+        end
     end
 
     local px, py = math.floor(position.X), math.floor(position.Y)
@@ -1484,7 +1498,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             distVal = math.floor(distanceStuds)
         end
         espObj.DistanceText.Text = distVal .. GetCfg("Distance.Ending")
-        currentBottomY = currentBottomY + textSize + (GetCfg("Weapon.Gap") or 0)
+        currentBottomY = currentBottomY + (GetCfg("Distance.TextSize") or textSize) + (GetCfg("Weapon.Gap") or 0)
     else
         espObj.DistanceText.Visible = false
     end
@@ -1654,6 +1668,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             local flagFont = GetCfg("Flags.Font")
             local flagTextSize = GetCfg("Flags.TextSize")
             local flagTextGap = GetCfg("Flags.TextGap")
+            local flagGap = GetCfg("Flags.Gap") or 2
             local flagSideGap = GetCfg("Flags.SideGap")
             local flagPosition = GetCfg("Flags.Position")
             local flags = {}
@@ -1673,7 +1688,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             local isRight = flagPosition == "Right"
             local fx = isRight and (x + sx + flagSideGap + rightOffset) or
                 (x - 100 - flagSideGap - leftOffset)
-            local fy = y - 2
+            local fy = y - flagGap
 
             if flagFont == "Smallest Pixel-7" then
                 fy = fy - 3
