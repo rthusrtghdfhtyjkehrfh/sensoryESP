@@ -646,26 +646,55 @@ local function FindPartByPatterns(Character, Pattern)
     end
     return nil
 end
-pcall(function()
+local FontsStillLoading = false
+local FontLoadingCapable = writefile and isfile and getcustomasset
+local function AttemptLoadFonts()
+    if not FontLoadingCapable then return end
+    FontsStillLoading = false
     for Name, Table in pairs(FontsToDownload) do
+        if ESPFonts.Loaded[Name] then continue end
+        FontsStillLoading = true
+
         local fn = Name:gsub("%s+", "")
-        if isfile and not isfile(fn .. ".ttf") and writefile and game.HttpGet then
-            writefile(fn .. ".ttf", game:HttpGet(Table.Link))
+        local ttfPath = fn .. ".ttf"
+        local fontPath = fn .. ".font"
+
+        local okGet, ttfData = pcall(HttpService.GetAsync, HttpService, Table.Link, true)
+        if not okGet then
+            local okLegacy, legacyData = pcall(function() return game:HttpGet(Table.Link) end)
+            if okLegacy and legacyData and legacyData ~= "" then
+                okGet, ttfData = true, legacyData
+            end
         end
-        if isfile and not isfile(fn .. ".font") and writefile then
-            local config = { name = fn, faces = { { name = "Regular", weight = 400, style = "normal", assetId = getcustomasset(fn .. ".ttf") } } }
-            writefile(fn .. ".font", HttpService:JSONEncode(config))
-        end
-        if isfile and getcustomasset and isfile(fn .. ".font") then
-            local ok, asset = pcall(getcustomasset, fn .. ".font")
-            if ok then
-                local ok2, font = pcall(Font.new, asset, Enum.FontWeight.Regular)
-                if ok2 and font then
-                    ESPFonts.Loaded[Name] = font
+
+        if okGet and ttfData and ttfData ~= "" then
+            local okWrite = pcall(writefile, ttfPath, ttfData)
+            if okWrite then
+                local okCA, assetId = pcall(getcustomasset, ttfPath)
+                if okCA and assetId then
+                    local config = {
+                        name = fn,
+                        faces = { { name = "Regular", weight = 400, style = "normal", assetId = assetId } }
+                    }
+                    local okF = pcall(writefile, fontPath, HttpService:JSONEncode(config))
+                    if okF then
+                        local okAsset, finalAsset = pcall(getcustomasset, fontPath)
+                        if okAsset then
+                            local okFont, fontObj = pcall(Font.new, finalAsset, Enum.FontWeight.Regular)
+                            if okFont and fontObj then
+                                ESPFonts.Loaded[Name] = fontObj
+                            end
+                        end
+                    end
                 end
             end
         end
     end
+end
+
+task.spawn(function()
+    task.wait(1)
+    AttemptLoadFonts()
 end)
 --
 
@@ -1988,6 +2017,7 @@ end)
 
 local lastScan = 0
 local lastRender = 0
+local lastFontRetry = 0
 local function RuntimeStep()
     if not ESPConfig.Enabled then
         for inst, data in pairs(TrackedInstances) do
@@ -2003,6 +2033,11 @@ local function RuntimeStep()
     end
 
     local now = tick()
+
+    if FontsStillLoading and now - lastFontRetry > 5 then
+        lastFontRetry = now
+        AttemptLoadFonts()
+    end
 
     if ESPConfig.LimitFPS and ESPConfig.LimitFPS > 0 then
         if now - lastRender < (1 / ESPConfig.LimitFPS) then return end
