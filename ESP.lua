@@ -595,22 +595,23 @@ end
 
 --// fonts
 local _fontMap = {
-    ["Proggy Clean"] = Enum.Font.Code,
-    ["Smallest Pixel-7"] = Enum.Font.Legacy,
-    ["Tahoma"] = Enum.Font.Arial,
+    ["Proggy Clean"] = Enum.Font.SourceSans,
+    ["Smallest Pixel-7"] = Enum.Font.SourceSans,
+    ["Tahoma"] = Enum.Font.SourceSans,
     ["Minecraftia"] = Enum.Font.SourceSans,
-    ["Tahoma Modern Bold"] = Enum.Font.ArialBold,
+    ["Tahoma Modern Bold"] = Enum.Font.SourceSansBold,
 }
 
 local FontsToDownload = {
-    ["Tahoma"] = { Link = "https://github.com/LuckyHub1/LuckyHub/raw/main/zekton_rg.ttf" },
-    ["Minecraftia"] = { Link = "https://github.com/LuckyHub1/LuckyHub/raw/refs/heads/main/Minecraftia.ttf" },
-    ["Smallest Pixel-7"] = { Link = "https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/smallest_pixel-7.ttf" },
-    ["Proggy Clean"] = { Link = "https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/ProggyClean.ttf" },
-    ["Tahoma Modern Bold"] = { Link = "https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/Tahoma-Modern-Bold.ttf" },
+    ["Tahoma"] = { TTF = "https://github.com/LuckyHub1/LuckyHub/raw/main/zekton_rg.ttf" },
+    ["Minecraftia"] = { TTF = "https://github.com/LuckyHub1/LuckyHub/raw/refs/heads/main/Minecraftia.ttf" },
+    ["Smallest Pixel-7"] = { TTF = "https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/smallest_pixel-7.ttf" },
+    ["Proggy Clean"] = { TTF = "https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/ProggyClean.ttf" },
+    ["Tahoma Modern Bold"] = { TTF = "https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/Tahoma-Modern-Bold.ttf" },
 }
 
 local ESPFonts = { Loaded = {} }
+local FontsStillLoading = true
 local CIRCLE_BOX_SEGMENTS = 36
 
 local SKELETON_BONE_DEFS = {
@@ -646,49 +647,37 @@ local function FindPartByPatterns(Character, Pattern)
     end
     return nil
 end
-local FontsStillLoading = false
 local FontLoadingCapable = writefile and isfile and getcustomasset
-local function AttemptLoadFonts()
+local function LoadCustomFont(Name, Link)
     if not FontLoadingCapable then return end
-    FontsStillLoading = false
+    local fn = Name:gsub("%s+", "")
+    local okDL, data = pcall(function() return game:HttpGet(Link) end)
+    if not okDL or not data or data == "" then return end
+    local okWrite = pcall(writefile, fn .. ".ttf", data)
+    if not okWrite then return end
+    local okConfig = pcall(function()
+        local config = {
+            name = fn,
+            faces = { { name = "Regular", weight = 400, style = "normal", assetId = getcustomasset(fn .. ".ttf") } }
+        }
+        writefile(fn .. ".ttf.json", HttpService:JSONEncode(config))
+    end)
+    if not okConfig then return end
+    local okLoad, font = pcall(Font.new, getcustomasset(fn .. ".ttf.json"), Enum.FontWeight.Regular)
+    if okLoad and font then
+        ESPFonts.Loaded[Name] = font
+    end
+end
+
+local function AttemptLoadFonts()
+    if not FontLoadingCapable then FontsStillLoading = false; return end
     for Name, Table in pairs(FontsToDownload) do
         if ESPFonts.Loaded[Name] then continue end
-        FontsStillLoading = true
-
-        local fn = Name:gsub("%s+", "")
-        local ttfPath = fn .. ".ttf"
-        local fontPath = fn .. ".font"
-
-        local okGet, ttfData = pcall(HttpService.GetAsync, HttpService, Table.Link, true)
-        if not okGet then
-            local okLegacy, legacyData = pcall(function() return game:HttpGet(Table.Link) end)
-            if okLegacy and legacyData and legacyData ~= "" then
-                okGet, ttfData = true, legacyData
-            end
-        end
-
-        if okGet and ttfData and ttfData ~= "" then
-            local okWrite = pcall(writefile, ttfPath, ttfData)
-            if okWrite then
-                local okCA, assetId = pcall(getcustomasset, ttfPath)
-                if okCA and assetId then
-                    local config = {
-                        name = fn,
-                        faces = { { name = "Regular", weight = 400, style = "normal", assetId = assetId } }
-                    }
-                    local okF = pcall(writefile, fontPath, HttpService:JSONEncode(config))
-                    if okF then
-                        local okAsset, finalAsset = pcall(getcustomasset, fontPath)
-                        if okAsset then
-                            local okFont, fontObj = pcall(Font.new, finalAsset, Enum.FontWeight.Regular)
-                            if okFont and fontObj then
-                                ESPFonts.Loaded[Name] = fontObj
-                            end
-                        end
-                    end
-                end
-            end
-        end
+        LoadCustomFont(Name, Table.TTF)
+    end
+    FontsStillLoading = false
+    for Name in pairs(FontsToDownload) do
+        if not ESPFonts.Loaded[Name] then FontsStillLoading = true; break end
     end
 end
 
