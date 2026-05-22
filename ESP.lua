@@ -204,7 +204,7 @@ local ESPConfig = {
     BoxColor = Color3.fromRGB(255, 255, 255),
     BoxThickness = 1,
     Outlines = {
-        Enabled = true,
+        Style = "Full", -- "Full", "Shadow", "None"
         Color = Color3.fromRGB(0, 0, 0),
         Thickness = 1,
     },
@@ -237,7 +237,7 @@ local ESPConfig = {
         HideWhenFullHP = true,
         FollowGradientColorText = true,
         Outline = {
-            Enabled = true,
+            Style = "Full",
             Color = Color3.fromRGB(0, 0, 0),
         },
         Gradient = {
@@ -253,6 +253,7 @@ local ESPConfig = {
     TextSize = 12,
     TextColor = Color3.fromRGB(255, 255, 255),
     TextOutline = true,
+    TextOutlineStyle = "Full", -- "Full", "Shadow", "None"
     TextGap = 3,
     Font = "Proggy Clean",
     TeamIndicator = {
@@ -274,6 +275,7 @@ local ESPConfig = {
     Weapon = {
         Enabled = true,
         Gap = 1,
+        OutlineStyle = "Full",
         Font = "Proggy Clean",
         TextSize = 12,
         Color = Color3.fromRGB(255, 255, 255),
@@ -288,6 +290,7 @@ local ESPConfig = {
         Gap = 2,
         SideGap = 4,
         TextGap = 2,
+        OutlineStyle = "Full",
         Font = "Smallest Pixel-7",
         TextSize = 9,
         Options = {
@@ -320,6 +323,7 @@ local ESPConfig = {
         StudsPerMeter = 3,
         Ending = "",
         Gap = 3,
+        OutlineStyle = "Full",
         Font = "Proggy Clean",
         TextSize = 12,
         Color = Color3.fromRGB(255, 255, 255),
@@ -474,7 +478,7 @@ local ESPConfig = {
                     HideWhenFullHP = false,
                     FollowGradientColorText = true,
                     Outline = {
-                        Enabled = true,
+                        Style = "Full",
                         Color = Color3.fromRGB(0, 0, 0),
                     },
                     Gradient = {
@@ -1180,6 +1184,27 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.Text.Text = name
     end
 
+    local function ApplyTextOutline(label, style, color)
+        local stroke = label:FindFirstChildOfClass("UIStroke")
+        if not stroke then return end
+        if style == "None" then
+            stroke.Enabled = false
+        elseif style == "Shadow" then
+            stroke.Enabled = true
+            stroke.Thickness = 0.5
+            stroke.Color = color or Color3.fromRGB(0, 0, 0)
+        else
+            stroke.Enabled = true
+            stroke.Thickness = 1
+            stroke.Color = color or Color3.fromRGB(0, 0, 0)
+        end
+    end
+
+    local textOutlineStyle = GetCfg("TextOutlineStyle")
+    -- Backward compat: if TextOutline is explicitly false, treat as None
+    if GetCfg("TextOutline") == false then textOutlineStyle = "None" end
+    local textOutlineColor = GetCfg("TextOutlineColor") or GetCfg("Outlines.Color")
+
     local t = GetCfg("BoxThickness")
     local o = GetCfg("Outlines.Thickness")
     local textSize = GetCfg("TextSize")
@@ -1195,12 +1220,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     if fontLoaded then
         espObj.Text.FontFace = fontLoaded
     end
-
-    local _s = espObj.Text:FindFirstChildOfClass("UIStroke")
-    if _s then
-        _s.Color = GetCfg("TextOutlineColor") or GetCfg("Outlines.Color")
-        _s.Enabled = GetCfg("TextOutline")
-    end
+    ApplyTextOutline(espObj.Text, textOutlineStyle, textOutlineColor)
 
     do
         local distFont = GetCfg("Distance.Font")
@@ -1211,6 +1231,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         if ESPFonts.Loaded[distFont] then
             espObj.DistanceText.FontFace = ESPFonts.Loaded[distFont]
         end
+        ApplyTextOutline(espObj.DistanceText, GetCfg("Distance.OutlineStyle") or textOutlineStyle, textOutlineColor)
     end
 
     do
@@ -1222,6 +1243,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         if ESPFonts.Loaded[wepFont] then
             espObj.WeaponText.FontFace = ESPFonts.Loaded[wepFont]
         end
+        ApplyTextOutline(espObj.WeaponText, GetCfg("Weapon.OutlineStyle") or textOutlineStyle, textOutlineColor)
     end
 
     local px, py = math.floor(position.X), math.floor(position.Y)
@@ -1304,9 +1326,13 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     local boxType = GetCfg("BoxType") or "Normal"
     local useCornerBoxes = boxType == "Corner"
     local useCircleBoxes = boxType == "Circle"
-    local outlinesEnabled = GetCfg("Outlines.Enabled")
+    local outlineStyle = GetCfg("Outlines.Style")
     local outlineColor = GetCfg("Outlines.Color")
     local outlineThickness = GetCfg("Outlines.Thickness")
+    -- Backward compat: if Enabled is explicitly false, treat as None
+    if GetCfg("Outlines.Enabled") == false then outlineStyle = "None" end
+    local outlineTransparency = (outlineStyle == "Shadow") and 0.5 or 0
+    local hasOutline = outlineStyle ~= "None"
 
     if useCornerBoxes then
         local cornerWidth = math.max(math.floor(sx * 0.25), t * 3)
@@ -1354,7 +1380,8 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 outline.To = p2
                 outline.Color = outlineColor
                 outline.Thickness = t + (outlineThickness * 2)
-                outline.Visible = boxesEnabled and outlinesEnabled and useCircleBoxes
+                outline.Visible = boxesEnabled and hasOutline and useCircleBoxes
+                outline.Transparency = outlineTransparency
             else
                 line.Visible = false
                 outline.Visible = false
@@ -1364,20 +1391,22 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
     for i = 1, 4 do
         espObj.Lines[i].Visible = boxesEnabled and not useCornerBoxes and not useCircleBoxes
-        espObj.Outlines[i].Visible = boxesEnabled and outlinesEnabled and not useCornerBoxes and not useCircleBoxes
+        espObj.Outlines[i].Visible = boxesEnabled and hasOutline and not useCornerBoxes and not useCircleBoxes
 
         espObj.Outlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
         espObj.Outlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
+        espObj.Outlines[i].BackgroundTransparency = outlineTransparency
         espObj.Lines[i].BackgroundColor3 = boxColor
         espObj.Outlines[i].BackgroundColor3 = outlineColor
     end
 
     for i = 1, 8 do
         espObj.CornerLines[i].Visible = boxesEnabled and useCornerBoxes
-        espObj.CornerOutlines[i].Visible = boxesEnabled and outlinesEnabled and useCornerBoxes
+        espObj.CornerOutlines[i].Visible = boxesEnabled and hasOutline and useCornerBoxes
 
         espObj.CornerOutlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
         espObj.CornerOutlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
+        espObj.CornerOutlines[i].BackgroundTransparency = outlineTransparency
         espObj.CornerLines[i].BackgroundColor3 = boxColor
         espObj.CornerOutlines[i].BackgroundColor3 = outlineColor
     end
@@ -1545,8 +1574,11 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         local hpSideGap = GetCfg("HealthBar.SideGap")
         local hpTextFollowBar = GetCfg("HealthBar.TextFollowBar")
 
-        espObj.HealthBarOutline.Visible = true
-        espObj.HealthBarOutline.BackgroundTransparency = GetCfg("HealthBar.Outline.Enabled") and 0 or 1
+        local hpOutlineStyle = GetCfg("HealthBar.Outline.Style")
+        -- Backward compat: if Enabled is explicitly false, treat as None
+        if GetCfg("HealthBar.Outline.Enabled") == false then hpOutlineStyle = "None" end
+        espObj.HealthBarOutline.Visible = hpOutlineStyle ~= "None"
+        espObj.HealthBarOutline.BackgroundTransparency = (hpOutlineStyle == "Shadow") and 0.5 or 0
         espObj.HealthBarOutline.BackgroundColor3 = GetCfg("HealthBar.Outline.Color")
 
         if isHorizontal then
@@ -1613,6 +1645,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             espObj.HealthText.Visible = true
             espObj.HealthText.Text = math.floor(health)
             espObj.HealthText.TextColor3 = followColorText and healthColor or GetCfg("TextColor")
+            ApplyTextOutline(espObj.HealthText, hpOutlineStyle, textOutlineColor)
 
             if isHorizontal then
                 local barWidth = math.floor((sx + 1) * healthPercent)
@@ -1696,6 +1729,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
             local flagsFontObj = _fontMap[flagFont] or Enum.Font.Code
             local flagsFontLoaded = ESPFonts.Loaded[flagFont]
+            local flagOutlineStyle = GetCfg("Flags.OutlineStyle") or textOutlineStyle
 
             for i, data in ipairs(flags) do
                 local label = espObj.FlagLabels[i]
@@ -1711,6 +1745,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     label.TextXAlignment = isRight and Enum.TextXAlignment.Left or Enum.TextXAlignment.Right
                     label.Position = UDim2.new(0, fx, 0,
                         fy + (i - 1) * (flagTextSize + flagTextGap))
+                    ApplyTextOutline(label, flagOutlineStyle, textOutlineColor)
                 end
             end
         end
