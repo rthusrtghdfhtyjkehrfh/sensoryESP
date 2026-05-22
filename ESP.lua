@@ -1,6 +1,6 @@
 --[[
   // dacces ESP //
-  // v1.0.5 //
+  // v1.0.6 //
   // 16/5/2026 //
 
   Made with love by Dacces, Gemini 3 flash, Gemini 3.1 high / low, and Claude Sonnet 4.6
@@ -316,6 +316,7 @@ local ESPConfig = {
         StudsPerMeter = 3,
         Ending = "",
         Gap = 3,
+        Color = Color3.fromRGB(255, 255, 255),
     },
 
     -- chams
@@ -415,6 +416,7 @@ local ESPConfig = {
                     Unit = "Meters",
                     Ending = "m",
                     Gap = 5,
+                    Color = Color3.fromRGB(255, 200, 50),
                 },
 
                 -- Chams Settings
@@ -651,7 +653,7 @@ pcall(function()
             writefile(fn .. ".ttf", game:HttpGet(Table.Link))
         end
         if isfile and not isfile(fn .. ".font") and writefile then
-            local config = { name = fn, faces = {{ name = "Regular", weight = 400, style = "normal", assetId = getcustomasset(fn .. ".ttf") }}}
+            local config = { name = fn, faces = { { name = "Regular", weight = 400, style = "normal", assetId = getcustomasset(fn .. ".ttf") } } }
             writefile(fn .. ".font", HttpService:JSONEncode(config))
         end
         if isfile and getcustomasset and isfile(fn .. ".font") then
@@ -921,6 +923,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         return currentDefault
     end
 
+    local _now = tick()
     local humanoid = not nonHuman and instance:FindFirstChild("Humanoid") or nil
 
     -- Chams logic
@@ -970,7 +973,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
             local visCheck = GetCfg("Chams.Adornment.VisibleCheck")
             local visRate = GetCfg("VisibilityCheckRate") or 0.1
-            local now = tick()
+            local now = _now
             local last = espObj.LastVisCheck or 0
             local shouldUpdate = (now - last) > visRate
 
@@ -1157,12 +1160,16 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     local o = GetCfg("Outlines.Thickness")
     local textSize = GetCfg("TextSize")
     local textColor = GetCfg("TextColor")
+    local fontName = GetCfg("Font")
+    local fontObj = _fontMap[fontName] or Enum.Font.Code
+    local fontLoaded = ESPFonts.Loaded[fontName]
+    local boxColor = GetCfg("BoxColor")
     -- Update Label Properties
     espObj.Text.TextSize = textSize
     espObj.Text.TextColor3 = textColor
-    espObj.Text.Font = _fontMap[GetCfg("Font")] or Enum.Font.Code
-    if ESPFonts.Loaded[GetCfg("Font")] then
-        espObj.Text.FontFace = ESPFonts.Loaded[GetCfg("Font")]
+    espObj.Text.Font = fontObj
+    if fontLoaded then
+        espObj.Text.FontFace = fontLoaded
     end
 
     local _s = espObj.Text:FindFirstChildOfClass("UIStroke")
@@ -1172,17 +1179,17 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     end
 
     espObj.DistanceText.TextSize = textSize
-    espObj.DistanceText.TextColor3 = textColor
-    espObj.DistanceText.Font = _fontMap[GetCfg("Font")] or Enum.Font.Code
-    if ESPFonts.Loaded[GetCfg("Font")] then
-        espObj.DistanceText.FontFace = ESPFonts.Loaded[GetCfg("Font")]
+    espObj.DistanceText.TextColor3 = GetCfg("Distance.Color")
+    espObj.DistanceText.Font = fontObj
+    if fontLoaded then
+        espObj.DistanceText.FontFace = fontLoaded
     end
 
     espObj.WeaponText.TextSize = textSize
     espObj.WeaponText.TextColor3 = textColor
-    espObj.WeaponText.Font = _fontMap[GetCfg("Font")] or Enum.Font.Code
-    if ESPFonts.Loaded[GetCfg("Font")] then
-        espObj.WeaponText.FontFace = ESPFonts.Loaded[GetCfg("Font")]
+    espObj.WeaponText.Font = fontObj
+    if fontLoaded then
+        espObj.WeaponText.FontFace = fontLoaded
     end
 
     local px, py = math.floor(position.X), math.floor(position.Y)
@@ -1191,7 +1198,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
     -- Get Health Early for Layout Offsets
     local health, maxHealth, healthPercent = 100, 100, 1
-    local humanoid = not nonHuman and instance:FindFirstChild("Humanoid") or nil
     if humanoid then
         health = humanoid.Health
         maxHealth = humanoid.MaxHealth
@@ -1234,8 +1240,9 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.WeaponText.Visible = false
         for _, l in ipairs(espObj.FlagLabels) do l.Visible = false end
 
+        local distUnit = GetCfg("Distance.Unit")
         local distVal = distanceStuds
-        if GetCfg("Distance.Unit") == "Meters" then
+        if distUnit == "Meters" then
             distVal = math.floor(distanceStuds / GetCfg("Distance.StudsPerMeter"))
         else
             distVal = math.floor(distanceStuds)
@@ -1307,7 +1314,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 local p2 = center + Vector2.new(math.cos(a2) * rx, math.sin(a2) * ry)
                 line.From = p1
                 line.To = p2
-                line.Color = GetCfg("BoxColor")
+                line.Color = boxColor
                 line.Thickness = t
                 line.Visible = boxesEnabled and useCircleBoxes
 
@@ -1329,7 +1336,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
         espObj.Outlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
         espObj.Outlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
-        espObj.Lines[i].BackgroundColor3 = GetCfg("BoxColor")
+        espObj.Lines[i].BackgroundColor3 = boxColor
         espObj.Outlines[i].BackgroundColor3 = outlineColor
     end
 
@@ -1339,7 +1346,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
         espObj.CornerOutlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
         espObj.CornerOutlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
-        espObj.CornerLines[i].BackgroundColor3 = GetCfg("BoxColor")
+        espObj.CornerLines[i].BackgroundColor3 = boxColor
         espObj.CornerOutlines[i].BackgroundColor3 = outlineColor
     end
 
@@ -1361,17 +1368,20 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
         if GetCfg("BoxFill.Gradient.Enabled") then
             grad.Enabled = true
+            local bgC1 = GetCfg("BoxFill.Gradient.Color1")
+            local bgC2 = GetCfg("BoxFill.Gradient.Color2")
+            local bgC3 = GetCfg("BoxFill.Gradient.Color3")
             grad.Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, GetCfg("BoxFill.Gradient.Color1")),
-                ColorSequenceKeypoint.new(0.5, GetCfg("BoxFill.Gradient.Color2")),
-                ColorSequenceKeypoint.new(1, GetCfg("BoxFill.Gradient.Color3"))
+                ColorSequenceKeypoint.new(0, bgC1),
+                ColorSequenceKeypoint.new(0.5, bgC2),
+                ColorSequenceKeypoint.new(1, bgC3)
             })
 
             local rot = GetCfg("BoxFill.Gradient.Rotation")
             if GetCfg("BoxFill.Gradient.Animated") then
                 local speed = GetCfg("BoxFill.Gradient.Speed")
                 local dir = GetCfg("BoxFill.Gradient.Direction") == "Left" and -1 or 1
-                rot = (rot + (tick() * speed * dir)) % 360
+                rot = (rot + (_now * speed * dir)) % 360
             end
             grad.Rotation = rot
             fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -1389,7 +1399,8 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     local rightTags = {}
 
     if GetCfg("TeamIndicator.Enabled") and teamOwner and teamOwner.Team then
-        local teamColor = GetCfg("TeamIndicator.UseTeamColor") and teamOwner.TeamColor.Color or GetCfg("TeamIndicator.Color")
+        local teamColor = GetCfg("TeamIndicator.UseTeamColor") and teamOwner.TeamColor.Color or
+        GetCfg("TeamIndicator.Color")
         local teamName = teamOwner.Team.Name
         local compactTeam = GetCfg("TeamIndicator.Compact") and CompactTeamName(teamName) or teamName
         local teamTag = string.format('<font color="%s">[%s]</font>', ColorToHex(teamColor), compactTeam)
@@ -1416,7 +1427,8 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     end
 
     if isFriendly then
-        local friendlyTag = string.format('<font color="%s">%s</font>', ColorToHex(GetCfg("FriendlyIndicator.Color")), GetCfg("FriendlyIndicator.Text"))
+        local friendlyTag = string.format('<font color="%s">%s</font>', ColorToHex(GetCfg("FriendlyIndicator.Color")),
+            GetCfg("FriendlyIndicator.Text"))
         if GetCfg("FriendlyIndicator.Position") == "Left" then
             table.insert(leftTags, friendlyTag)
         else
@@ -1440,19 +1452,21 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.Text.Visible = false
     end
 
-    local currentBottomY = y + sy + (GetCfg("Distance.Gap") or 0) + bottomOffset
+    local distGap = GetCfg("Distance.Gap") or 0
+    local currentBottomY = y + sy + distGap + bottomOffset
     if GetCfg("Distance.Enabled") then
         espObj.DistanceText.Visible = true
         espObj.DistanceText.Position = UDim2.new(0, px - 50, 0, currentBottomY)
 
+        local distUnit = GetCfg("Distance.Unit")
         local distVal = distanceStuds
-        if GetCfg("Distance.Unit") == "Meters" then
+        if distUnit == "Meters" then
             distVal = math.floor(distanceStuds / GetCfg("Distance.StudsPerMeter"))
         else
             distVal = math.floor(distanceStuds)
         end
         espObj.DistanceText.Text = distVal .. GetCfg("Distance.Ending")
-        currentBottomY = currentBottomY + GetCfg("TextSize") + (GetCfg("Weapon.Gap") or 0)
+        currentBottomY = currentBottomY + textSize + (GetCfg("Weapon.Gap") or 0)
     else
         espObj.DistanceText.Visible = false
     end
@@ -1495,6 +1509,9 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         -- Positioning
         local hpPos = GetCfg("HealthBar.Position")
         local isHorizontal = (hpPos == "Top" or hpPos == "Bottom")
+        local hpWidth = GetCfg("HealthBar.Width")
+        local hpSideGap = GetCfg("HealthBar.SideGap")
+        local hpTextFollowBar = GetCfg("HealthBar.TextFollowBar")
 
         espObj.HealthBarOutline.Visible = true
         espObj.HealthBarOutline.BackgroundTransparency = GetCfg("HealthBar.Outline.Enabled") and 0 or 1
@@ -1502,70 +1519,68 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
         if isHorizontal then
             local barWidth = math.floor((sx + 1) * healthPercent)
-            espObj.HealthBarOutline.Size = UDim2.new(0, sx + 3, 0, GetCfg("HealthBar.Width") + 2)
+            espObj.HealthBarOutline.Size = UDim2.new(0, sx + 3, 0, hpWidth + 2)
 
             if hpPos == "Top" then
                 espObj.HealthBarOutline.Position = UDim2.new(0, x - 1, 0,
-                    y - o - GetCfg("HealthBar.SideGap") - GetCfg("HealthBar.Width") - 1)
+                    y - o - hpSideGap - hpWidth - 1)
             else -- Bottom
-                espObj.HealthBarOutline.Position = UDim2.new(0, x - 1, 0, y + sy + o + GetCfg("HealthBar.SideGap"))
+                espObj.HealthBarOutline.Position = UDim2.new(0, x - 1, 0, y + sy + o + hpSideGap)
             end
 
-            espObj.HealthBarContainer.Size = UDim2.new(0, barWidth, 0, GetCfg("HealthBar.Width"))
+            espObj.HealthBarContainer.Size = UDim2.new(0, barWidth, 0, hpWidth)
             espObj.HealthBarContainer.Position = UDim2.new(0, 1, 0, 1)
 
-            -- Fixed Size Bar for static gradient
-            espObj.HealthBar.Size = UDim2.new(0, sx + 1, 0, GetCfg("HealthBar.Width"))
+            espObj.HealthBar.Size = UDim2.new(0, sx + 1, 0, hpWidth)
             espObj.HealthBar.Position = UDim2.new(0, 0, 0, 0)
         else -- Vertical
             local barHeight = math.floor((sy + 1) * healthPercent)
-            espObj.HealthBarOutline.Size = UDim2.new(0, GetCfg("HealthBar.Width") + 2, 0, sy + 3)
+            espObj.HealthBarOutline.Size = UDim2.new(0, hpWidth + 2, 0, sy + 3)
 
             if hpPos == "Left" then
                 espObj.HealthBarOutline.Position = UDim2.new(0,
-                    x - o - GetCfg("HealthBar.SideGap") - GetCfg("HealthBar.Width") - 1, 0, y - 1)
+                    x - o - hpSideGap - hpWidth - 1, 0, y - 1)
             else -- Right
-                espObj.HealthBarOutline.Position = UDim2.new(0, x + sx + o + GetCfg("HealthBar.SideGap"), 0, y - 1)
+                espObj.HealthBarOutline.Position = UDim2.new(0, x + sx + o + hpSideGap, 0, y - 1)
             end
 
-            espObj.HealthBarContainer.Size = UDim2.new(0, GetCfg("HealthBar.Width"), 0, barHeight)
+            espObj.HealthBarContainer.Size = UDim2.new(0, hpWidth, 0, barHeight)
             espObj.HealthBarContainer.Position = UDim2.new(0, 1, 0, (sy + 1) - barHeight + 1)
 
-            -- Fixed Size Bar for static gradient
-            espObj.HealthBar.Size = UDim2.new(0, GetCfg("HealthBar.Width"), 0, sy + 1)
+            espObj.HealthBar.Size = UDim2.new(0, hpWidth, 0, sy + 1)
             espObj.HealthBar.Position = UDim2.new(0, 0, 0, -(sy + 1 - barHeight))
         end
 
         -- Color & Gradient
+        local gradientEnabled = GetCfg("HealthBar.Gradient.Enabled")
+        local showText = GetCfg("HealthBar.ShowText")
+        if GetCfg("HealthBar.HideWhenFullHP") and health >= maxHealth then
+            showText = false
+        end
+        local followColorText = showText and GetCfg("HealthBar.FollowGradientColorText")
         local healthColor = Color3.fromHSV(healthPercent * 0.3, 1, 1)
-        if GetCfg("HealthBar.Gradient.Enabled") then
-            espObj.HealthGradient.Rotation = isHorizontal and 0 or 90
+
+        if gradientEnabled then
+            espObj.HealthGradient.Rotation = isHorizontal and 180 or 90
             espObj.HealthBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 
-            -- 3-Color Lerp Logic
-            if healthPercent > 0.5 then
-                -- Interpolate between Full (Color1) and Mid (Color2)
-                local ratio = (1 - healthPercent) * 2
-                healthColor = GetCfg("HealthBar.Gradient.Color1"):Lerp(GetCfg("HealthBar.Gradient.Color2"), ratio)
-            else
-                -- Interpolate between Mid (Color2) and Low (Color3)
-                local ratio = (0.5 - healthPercent) * 2
-                healthColor = GetCfg("HealthBar.Gradient.Color2"):Lerp(GetCfg("HealthBar.Gradient.Color3"), ratio)
+            if followColorText then
+                if healthPercent > 0.5 then
+                    local ratio = (1 - healthPercent) * 2
+                    healthColor = GetCfg("HealthBar.Gradient.Color1"):Lerp(GetCfg("HealthBar.Gradient.Color2"), ratio)
+                else
+                    local ratio = (0.5 - healthPercent) * 2
+                    healthColor = GetCfg("HealthBar.Gradient.Color2"):Lerp(GetCfg("HealthBar.Gradient.Color3"), ratio)
+                end
             end
         else
             espObj.HealthBar.BackgroundColor3 = healthColor
         end
 
-        local showText = GetCfg("HealthBar.ShowText")
-        if GetCfg("HealthBar.HideWhenFullHP") and health >= maxHealth then
-            showText = false
-        end
-
         if showText then
             espObj.HealthText.Visible = true
             espObj.HealthText.Text = math.floor(health)
-            espObj.HealthText.TextColor3 = GetCfg("HealthBar.FollowGradientColorText") and healthColor or
-                GetCfg("TextColor")
+            espObj.HealthText.TextColor3 = followColorText and healthColor or GetCfg("TextColor")
 
             if isHorizontal then
                 local barWidth = math.floor((sx + 1) * healthPercent)
@@ -1575,10 +1590,10 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 espObj.HealthText.TextXAlignment = Enum.TextXAlignment.Center
                 espObj.HealthText.Size = UDim2.new(0, 0, 0, 0)
 
-                if GetCfg("HealthBar.TextFollowBar") then
-                    espObj.HealthText.Position = UDim2.new(0, barLeftX, 0, textY + (GetCfg("HealthBar.Width") / 2) + 1)
+                if hpTextFollowBar then
+                    espObj.HealthText.Position = UDim2.new(0, barLeftX, 0, textY + (hpWidth / 2) + 1)
                 else
-                    espObj.HealthText.Position = UDim2.new(0, x + sx, 0, textY + (GetCfg("HealthBar.Width") / 2) + 1)
+                    espObj.HealthText.Position = UDim2.new(0, x + sx, 0, textY + (hpWidth / 2) + 1)
                 end
             else
                 local barHeight = math.floor((sy + 1) * healthPercent)
@@ -1589,8 +1604,8 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     Enum.TextXAlignment.Left
                 espObj.HealthText.Size = UDim2.new(0, 0, 0, 0)
 
-                local textX = hpPos == "Left" and (barOutlineX - 2) or (barOutlineX + GetCfg("HealthBar.Width") + 4)
-                local textY = GetCfg("HealthBar.TextFollowBar") and barTopY or y
+                local textX = hpPos == "Left" and (barOutlineX - 2) or (barOutlineX + hpWidth + 4)
+                local textY = hpTextFollowBar and barTopY or y
                 espObj.HealthText.Position = UDim2.new(0, textX, 0, textY)
             end
         else
@@ -1606,33 +1621,48 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     if GetCfg("Flags.Enabled") and instance:IsA("Model") and not noStatus then
         local humanoid = instance:FindFirstChild("Humanoid")
         if humanoid then
-            local flags = {}
-
             local state = humanoid:GetState()
             local isMoving = humanoid.MoveDirection.Magnitude > 0
             local isJumping = (state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.FallingDown or state == Enum.HumanoidStateType.Freefall)
             local isSwimming = state == Enum.HumanoidStateType.Swimming
+            local flagOptionsMoving = GetCfg("Flags.Options.Moving")
+            local flagOptionsJumping = GetCfg("Flags.Options.Jumping")
+            local flagOptionsSwimming = GetCfg("Flags.Options.Swimming")
+            local flagOptionsIdle = GetCfg("Flags.Options.Idle")
+            local flagColorsMoving = GetCfg("Flags.Colors.Moving")
+            local flagColorsJumping = GetCfg("Flags.Colors.Jumping")
+            local flagColorsSwimming = GetCfg("Flags.Colors.Swimming")
+            local flagColorsIdle = GetCfg("Flags.Colors.Idle")
+            local flagFont = GetCfg("Flags.Font")
+            local flagTextSize = GetCfg("Flags.TextSize")
+            local flagTextGap = GetCfg("Flags.TextGap")
+            local flagSideGap = GetCfg("Flags.SideGap")
+            local flagPosition = GetCfg("Flags.Position")
+            local flags = {}
 
-            if isMoving and isJumping and GetCfg("Flags.Options.Moving") and GetCfg("Flags.Options.Jumping") then
-                table.insert(flags, { text = "Moving & Jumping", color = GetCfg("Flags.Colors.Moving") })
-            elseif isJumping and GetCfg("Flags.Options.Jumping") then
-                table.insert(flags, { text = "Jumping", color = GetCfg("Flags.Colors.Jumping") })
-            elseif isMoving and GetCfg("Flags.Options.Moving") then
-                table.insert(flags, { text = "Moving", color = GetCfg("Flags.Colors.Moving") })
-            elseif isSwimming and GetCfg("Flags.Options.Swimming") then
-                table.insert(flags, { text = "Swimming", color = GetCfg("Flags.Colors.Swimming") })
-            elseif GetCfg("Flags.Options.Idle") then
-                table.insert(flags, { text = "Idle", color = GetCfg("Flags.Colors.Idle") })
+            if isMoving and isJumping and flagOptionsMoving and flagOptionsJumping then
+                table.insert(flags, { text = "Moving & Jumping", color = flagColorsMoving })
+            elseif isJumping and flagOptionsJumping then
+                table.insert(flags, { text = "Jumping", color = flagColorsJumping })
+            elseif isMoving and flagOptionsMoving then
+                table.insert(flags, { text = "Moving", color = flagColorsMoving })
+            elseif isSwimming and flagOptionsSwimming then
+                table.insert(flags, { text = "Swimming", color = flagColorsSwimming })
+            elseif flagOptionsIdle then
+                table.insert(flags, { text = "Idle", color = flagColorsIdle })
             end
 
-            local isRight = GetCfg("Flags.Position") == "Right"
-            local fx = isRight and (x + sx + GetCfg("Flags.SideGap") + rightOffset) or
-                (x - 100 - GetCfg("Flags.SideGap") - leftOffset)
+            local isRight = flagPosition == "Right"
+            local fx = isRight and (x + sx + flagSideGap + rightOffset) or
+                (x - 100 - flagSideGap - leftOffset)
             local fy = y - 2
 
-            if GetCfg("Flags.Font") == "Smallest Pixel-7" then
+            if flagFont == "Smallest Pixel-7" then
                 fy = fy - 3
             end
+
+            local flagsFontObj = _fontMap[flagFont] or Enum.Font.Code
+            local flagsFontLoaded = ESPFonts.Loaded[flagFont]
 
             for i, data in ipairs(flags) do
                 local label = espObj.FlagLabels[i]
@@ -1640,14 +1670,14 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     label.Visible = true
                     label.Text = data.text
                     label.TextColor3 = data.color
-                    label.Font = _fontMap[GetCfg("Flags.Font")] or Enum.Font.Code
-                    if ESPFonts.Loaded[GetCfg("Flags.Font")] then
-                        label.FontFace = ESPFonts.Loaded[GetCfg("Flags.Font")]
+                    label.Font = flagsFontObj
+                    if flagsFontLoaded then
+                        label.FontFace = flagsFontLoaded
                     end
-                    label.TextSize = GetCfg("Flags.TextSize")
+                    label.TextSize = flagTextSize
                     label.TextXAlignment = isRight and Enum.TextXAlignment.Left or Enum.TextXAlignment.Right
                     label.Position = UDim2.new(0, fx, 0,
-                        fy + (i - 1) * (GetCfg("Flags.TextSize") + GetCfg("Flags.TextGap")))
+                        fy + (i - 1) * (flagTextSize + flagTextGap))
                 end
             end
         end
@@ -1655,6 +1685,11 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
     -- Skeleton logic
     if GetCfg("Skeleton.Enabled") and instance:IsA("Model") then
+        local skeletonOutline = GetCfg("Skeleton.Outline")
+        local skeletonThickness = GetCfg("Skeleton.Thickness")
+        local skeletonColor = GetCfg("Skeleton.Color")
+        local skeletonOutlineColor = GetCfg("Skeleton.OutlineColor")
+
         for i, def in ipairs(SKELETON_BONE_DEFS) do
             local boneFrame = espObj.Bones[i]
             local outlineFrame = espObj.BoneOutlines[i]
@@ -1670,12 +1705,12 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     local pA = Vector2.new(posA.X, posA.Y)
                     local pB = Vector2.new(posB.X, posB.Y)
 
-                    if GetCfg("Skeleton.Outline") then
-                        DrawLine(outlineFrame, pA, pB, GetCfg("Skeleton.Thickness") + 2, GetCfg("Skeleton.OutlineColor"))
+                    if skeletonOutline then
+                        DrawLine(outlineFrame, pA, pB, skeletonThickness + 2, skeletonOutlineColor)
                     else
                         outlineFrame.Visible = false
                     end
-                    DrawLine(boneFrame, pA, pB, GetCfg("Skeleton.Thickness"), GetCfg("Skeleton.Color"))
+                    DrawLine(boneFrame, pA, pB, skeletonThickness, skeletonColor)
                 else
                     boneFrame.Visible = false
                     outlineFrame.Visible = false
@@ -1960,7 +1995,8 @@ local function RuntimeStep()
                 local disabledConfig = DeepCopy(data.Config or {})
                 disabledConfig.Chams = disabledConfig.Chams or {}
                 disabledConfig.Chams.Enabled = false
-                UpdateESPObj(data.espObj, nil, nil, "", 0, inst, data.Cheap, data.NonHuman, data.NoStatus, disabledConfig, false)
+                UpdateESPObj(data.espObj, nil, nil, "", 0, inst, data.Cheap, data.NonHuman, data.NoStatus, disabledConfig,
+                    false)
             end
         end
         return
