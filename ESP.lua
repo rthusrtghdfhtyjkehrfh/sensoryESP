@@ -238,6 +238,8 @@ local ESPConfig = {
         TextFollowBar = true,
         HideWhenFullHP = true,
         FollowGradientColorText = true,
+        Font = "Smallest Pixel-7",
+        TextSize = 9,
         Outline = {
             Style = "Full",
             Color = Color3.fromRGB(0, 0, 0),
@@ -1595,7 +1597,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             end
 
             espObj.HealthBarContainer.Size = UDim2.new(0, barWidth, 0, hpWidth)
-            espObj.HealthBarContainer.Position = UDim2.new(0, 1, 0, 1)
+            espObj.HealthBarContainer.Position = UDim2.new(0, sx + 2 - barWidth, 0, 1)
 
             espObj.HealthBar.Size = UDim2.new(0, sx + 1, 0, hpWidth)
             espObj.HealthBar.Position = UDim2.new(0, 0, 0, 0)
@@ -1627,7 +1629,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         local healthColor = Color3.fromHSV(healthPercent * 0.3, 1, 1)
 
         if gradientEnabled then
-            espObj.HealthGradient.Rotation = isHorizontal and 180 or 90
+            espObj.HealthGradient.Rotation = isHorizontal and 0 or 90
             espObj.HealthBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 
             if followColorText then
@@ -1646,12 +1648,19 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         if showText then
             espObj.HealthText.Visible = true
             espObj.HealthText.Text = math.floor(health)
+            espObj.HealthText.TextSize = GetCfg("HealthBar.TextSize")
+            local hpFont = GetCfg("HealthBar.Font")
+            local hpFontObj = _fontMap[hpFont] or Enum.Font.Code
+            espObj.HealthText.Font = hpFontObj
+            if ESPFonts.Loaded[hpFont] then
+                espObj.HealthText.FontFace = ESPFonts.Loaded[hpFont]
+            end
             espObj.HealthText.TextColor3 = followColorText and healthColor or GetCfg("TextColor")
             ApplyTextOutline(espObj.HealthText, hpOutlineStyle, textOutlineColor)
 
             if isHorizontal then
                 local barWidth = math.floor((sx + 1) * healthPercent)
-                local barLeftX = x + barWidth - 1
+                local barLeftX = x + sx + 1 - barWidth
                 local textY = espObj.HealthBarOutline.Position.Y.Offset
 
                 espObj.HealthText.TextXAlignment = Enum.TextXAlignment.Center
