@@ -206,7 +206,7 @@ local ESPConfig = {
     BoxColor = Color3.fromRGB(255, 255, 255),
     BoxThickness = 1,
     Outlines = {
-        Style = "Full", -- "Full", "Shadow", "None"
+        Style = "Full", -- "Full", "None"
         Color = Color3.fromRGB(0, 0, 0),
         Thickness = 1,
     },
@@ -257,7 +257,7 @@ local ESPConfig = {
     TextSize = 12,
     TextColor = Color3.fromRGB(255, 255, 255),
     TextOutline = true,
-    TextOutlineStyle = "Full", -- "Full", "Shadow", "None"
+    TextOutlineStyle = "Full", -- "Full", "None"
     TextGap = 3,
     Font = "Proggy Clean",
     TeamIndicator = {
@@ -1194,8 +1194,9 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         if style == "None" then
             stroke.Enabled = false
         elseif style == "Shadow" then
+            -- legacy, treated as Full
             stroke.Enabled = true
-            stroke.Thickness = 0.5
+            stroke.Thickness = 1
             stroke.Color = color or Color3.fromRGB(0, 0, 0)
         else
             stroke.Enabled = true
@@ -1335,7 +1336,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     local outlineThickness = GetCfg("Outlines.Thickness")
     -- Backward compat: if Enabled is explicitly false, treat as None
     if GetCfg("Outlines.Enabled") == false then outlineStyle = "None" end
-    local outlineTransparency = (outlineStyle == "Shadow") and 0.15 or 0
+    local outlineTransparency = 0
     local hasOutline = outlineStyle ~= "None"
 
     if useCornerBoxes then
@@ -1582,7 +1583,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         -- Backward compat: if Enabled is explicitly false, treat as None
         if GetCfg("HealthBar.Outline.Enabled") == false then hpOutlineStyle = "None" end
         espObj.HealthBarOutline.Visible = hpOutlineStyle ~= "None"
-        espObj.HealthBarOutline.BackgroundTransparency = (hpOutlineStyle == "Shadow") and 0.5 or 0
+        espObj.HealthBarOutline.BackgroundTransparency = 0
         espObj.HealthBarOutline.BackgroundColor3 = GetCfg("HealthBar.Outline.Color")
 
         if isHorizontal then
