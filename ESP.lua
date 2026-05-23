@@ -734,6 +734,7 @@ local function CreateLine(parent)
     local outline = Instance.new("Frame")
     outline.BorderSizePixel = 0
     outline.BackgroundColor3 = ESPConfig.Outlines.Color
+    outline.ZIndex = 0
     outline.Parent = parent
 
     return line, outline
