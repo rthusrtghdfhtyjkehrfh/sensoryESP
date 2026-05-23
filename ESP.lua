@@ -1598,7 +1598,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             end
 
             espObj.HealthBarContainer.Size = UDim2.new(0, barWidth, 0, hpWidth)
-            espObj.HealthBarContainer.Position = UDim2.new(0, sx + 2 - barWidth, 0, 1)
+            espObj.HealthBarContainer.Position = UDim2.new(0, 1, 0, 1)
 
             espObj.HealthBar.Size = UDim2.new(0, sx + 1, 0, hpWidth)
             espObj.HealthBar.Position = UDim2.new(0, 0, 0, 0)
@@ -1629,8 +1629,8 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         local followColorText = showText and GetCfg("HealthBar.FollowGradientColorText")
         local healthColor = Color3.fromHSV(healthPercent * 0.3, 1, 1)
 
-        if gradientEnabled then
-            espObj.HealthGradient.Rotation = isHorizontal and 0 or 90
+        if gradientEnabled and not isHorizontal then
+            espObj.HealthGradient.Rotation = 90
             espObj.HealthBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 
             if followColorText then
@@ -1661,7 +1661,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
             if isHorizontal then
                 local barWidth = math.floor((sx + 1) * healthPercent)
-                local barLeftX = x + sx + 1 - barWidth
+                local barLeftX = x + barWidth - 1
                 local textY = espObj.HealthBarOutline.Position.Y.Offset
 
                 espObj.HealthText.TextXAlignment = Enum.TextXAlignment.Center
