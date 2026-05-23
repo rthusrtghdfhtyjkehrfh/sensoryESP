@@ -1,326 +1,328 @@
 local esp = loadstring(game:HttpGet("https://raw.githubusercontent.com/rthusrtghdfhtyjkehrfh/sensoryESP/main/ESP.lua"))()
 
 esp:Load({
-    -- checks
-    Enabled = true,
 
+    -- General
+    Enabled = true,
     Keybind = {
         Enabled = true,
         Key = Enum.KeyCode.Insert,
     },
-
     Players = true,
     LocalPlayer = false,
-
     LimitFPS = 70,
-    DynamicBoxes = true,
+    DynamicBoxes = false,
+    DynamicBoxesCheap = false,
+    DynamicBoxesIncludeAll = false,
     VisibilityCheckRate = 0.3,
 
-	-- kd
-	TeamIndicator = {
-	    Enabled = true,
-	    Position = "Right", -- "Left" or "Right"
-	    UseTeamColor = true,
-	    Color = Color3.fromRGB(255, 255, 255),
-	    Compact = true,
-	    TextSize = 10,
-	},
-	
-	FriendlyIndicator = {
-	    Enabled = true,
-	    Position = "Right", -- "Left" or "Right"
-	    CheckTeam = true,
-	    CheckFriends = true,
-	    Text = "[F]",
-	    Color = Color3.fromRGB(0, 255, 0),
-	},
-
-		
-    -- boxes
+    -- Box
     Boxes = true,
-    BoxType = "Corner",
-
-    BoxColor = Color3.fromRGB(255,255,255),
+    BoxType = "Normal",
+    BoxColor = Color3.fromRGB(255, 255, 255),
     BoxThickness = 1,
 
     Outlines = {
-        Enabled = true,
-        Color = Color3.fromRGB(0,0,0),
+        Style = "Full",
+        Color = Color3.fromRGB(0, 0, 0),
         Thickness = 1,
     },
 
-    -- fill
     BoxFill = {
-        Enabled = true,
-
-        Color = Color3.fromRGB(255,255,255),
-        Transparency = 0.9,
-
+        Enabled = false,
+        Color = Color3.fromRGB(255, 255, 255),
+        Transparency = 0.85,
         Gradient = {
-            Enabled = true,
-
-            Color1 = Color3.fromRGB(180,255,255),
-            Color2 = Color3.fromRGB(0,255,255),
-            Color3 = Color3.fromRGB(0,120,255),
-
+            Enabled = false,
+            Color1 = Color3.fromRGB(180, 255, 255),
+            Color2 = Color3.fromRGB(0, 255, 255),
+            Color3 = Color3.fromRGB(0, 120, 255),
             Rotation = 0,
-
-            Animated = true,
+            Animated = false,
             Speed = 64,
             Direction = "Right",
-        }
+        },
     },
 
-    -- health
+    -- Health bar
     HealthBar = {
         Enabled = true,
-
         Position = "Left",
         SideGap = 2,
         Width = 2,
-
         ShowText = true,
         TextFollowBar = true,
-
         HideWhenFullHP = true,
         FollowGradientColorText = true,
-
+        Font = "Smallest Pixel-7",
+        TextSize = 9,
         Outline = {
-            Enabled = true,
-            Color = Color3.fromRGB(0,0,0),
+            Style = "Full",
+            Color = Color3.fromRGB(0, 0, 0),
         },
-
         Gradient = {
             Enabled = true,
-
-            Color1 = Color3.fromRGB(0,255,0),
-            Color2 = Color3.fromRGB(255,255,0),
-            Color3 = Color3.fromRGB(255,0,0),
-        }
+            Color1 = Color3.fromRGB(0, 255, 0),
+            Color2 = Color3.fromRGB(255, 255, 0),
+            Color3 = Color3.fromRGB(255, 0, 0),
+        },
     },
 
-    -- text
+    -- Name text
+    Names = true,
     TextSize = 12,
-    TextColor = Color3.fromRGB(255,255,255),
+    TextColor = Color3.fromRGB(255, 255, 255),
     TextOutline = true,
+    TextOutlineStyle = "Full",
     TextGap = 3,
     Font = "Proggy Clean",
 
-    -- weapon
+    TeamIndicator = {
+        Enabled = true,
+        Position = "Right",
+        UseTeamColor = true,
+        Color = Color3.fromRGB(255, 255, 255),
+        Compact = true,
+        TextSize = 10,
+    },
+
+    FriendlyIndicator = {
+        Enabled = true,
+        Position = "Right",
+        CheckTeam = true,
+        CheckFriends = true,
+        Text = "[F]",
+        Color = Color3.fromRGB(0, 255, 0),
+    },
+
     Weapon = {
         Enabled = true,
         Gap = 1,
-
+        OutlineStyle = "Full",
+        Font = "Proggy Clean",
+        TextSize = 12,
+        Color = Color3.fromRGB(255, 255, 255),
         InventoryPath = "ReplicatedStorage.Players.%NAME%.Inventory",
         UseToolFallback = true,
     },
 
-    -- flags
     Flags = {
         Enabled = true,
-
         Position = "Right",
+        Gap = 2,
         SideGap = 4,
         TextGap = 2,
-
+        OutlineStyle = "Full",
         Font = "Smallest Pixel-7",
         TextSize = 9,
-
         Options = {
             Idle = false,
             Moving = true,
             Jumping = true,
             Swimming = true,
         },
-
         Colors = {
-            Idle = Color3.fromRGB(255,255,255),
-            Moving = Color3.fromRGB(255,255,255),
-            Jumping = Color3.fromRGB(255,255,255),
-            Swimming = Color3.fromRGB(65,65,255),
-        }
+            Idle = Color3.fromRGB(255, 255, 255),
+            Moving = Color3.fromRGB(255, 255, 255),
+            Jumping = Color3.fromRGB(255, 255, 255),
+            Swimming = Color3.fromRGB(65, 65, 255),
+        },
     },
 
-    -- skeleton
     Skeleton = {
         Enabled = false,
-
-        Color = Color3.fromRGB(255,255,255),
-
+        Color = Color3.fromRGB(255, 255, 255),
         Outline = true,
-        OutlineColor = Color3.fromRGB(0,0,0),
-
+        OutlineColor = Color3.fromRGB(0, 0, 0),
         Thickness = 1,
     },
 
-    -- distance
     Distance = {
         Enabled = true,
-
         Unit = "Meters",
         StudsPerMeter = 3,
-
         Ending = "",
         Gap = 3,
+        OutlineStyle = "Full",
+        Font = "Proggy Clean",
+        TextSize = 12,
+        Color = Color3.fromRGB(255, 255, 255),
     },
 
-    -- chams
     Chams = {
-        Enabled = true,
-
-        Type = "MeshChams",
-
+        Enabled = false,
+        Type = "Highlight",
         Highlight = {
-            FillColor = Color3.fromRGB(255,255,255),
+            FillColor = Color3.fromRGB(255, 255, 255),
             FillTransparency = 1,
-
-            OutlineColor = Color3.fromRGB(255,255,255),
+            OutlineColor = Color3.fromRGB(255, 255, 255),
             OutlineTransparency = 0,
-
             VisibleCheck = false,
         },
-
         Adornment = {
-            Color = Color3.fromRGB(255,255,255),
-            VisibleColor = Color3.fromRGB(0,255,0),
-
-            Transparency = 0.5,
-
+            Color = Color3.fromRGB(59, 144, 204),
+            VisibleColor = Color3.fromRGB(59, 204, 90),
+            Transparency = 0.7,
             AlwaysOnTop = true,
             VisibleCheck = false,
         },
-
         MeshChams = {
-            FillColor = Color3.fromRGB(255,255,255),
-            FillTransparency = 0.5,
-
-            OutlineColor = Color3.fromRGB(255,255,255),
+            FillColor = Color3.fromRGB(59, 144, 204),
+            FillTransparency = 0.6,
+            OutlineColor = Color3.fromRGB(255, 255, 255),
             OutlineTransparency = 0,
-
             VisibleCheck = false,
         },
     },
 
-    -- directories
     Directories = {
         {
-        --example
-            DisplayName = "UAZ",
+            DisplayName = "Dummy",
             Path = "workspace",
             Multiple = true,
             Cheap = false,
-            NonHuman = true,
-            NoStatus = true,
+            NonHuman = false,
+            NoStatus = false,
+            Recursive = false,
             Contains = {},
-            Names = { "UAZ" },
+            BlockNames = {},
+            Names = { "Dummy", "Rig" },
             Config = {
-                -- Box Settings
                 Boxes = true,
-		BoxType = "Corner",
-                BoxColor = Color3.fromRGB(255, 150, 0),
-                BoxThickness = 1,
-
-
-                BoxFill = {
-                    Enabled = true,
-                    Color = Color3.fromRGB(255, 150, 0),
-                    Transparency = 0.8,
-                    Gradient = {
-                        Enabled = true,
-                        Color1 = Color3.fromRGB(255, 150, 0),
-                        Color2 = Color3.fromRGB(255, 255, 255),
-                        Color3 = Color3.fromRGB(255, 150, 0),
-                        Rotation = 0,
-                        Animated = true,
-                        Speed = 90,
-                        Direction = "Left",
-                    }
+                BoxType = "Normal",
+                BoxColor = Color3.fromRGB(255, 255, 255),
+                BoxThickness = 1.5,
+                Outlines = {
+                    Style = "Full",
+                    Color = Color3.fromRGB(0, 0, 0),
+                    Thickness = 1,
                 },
-
-                -- Text Settings
-                TextColor = Color3.fromRGB(255, 200, 50),
+                BoxFill = {
+                    Enabled = false,
+                    Color = Color3.fromRGB(255, 255, 255),
+                    Transparency = 0.85,
+                    Gradient = {
+                        Enabled = false,
+                        Color1 = Color3.fromRGB(255, 255, 255),
+                        Color2 = Color3.fromRGB(200, 200, 200),
+                        Color3 = Color3.fromRGB(255, 255, 255),
+                        Rotation = 0,
+                        Animated = false,
+                        Speed = 0,
+                        Direction = "Left",
+                    },
+                },
+                Names = true,
                 TextSize = 12,
+                TextColor = Color3.fromRGB(255, 255, 255),
                 TextOutline = true,
+                TextOutlineStyle = "Full",
                 TextGap = 4,
-                Font = "Proggy Clean",
-
-                -- Distance Settings
+                Font = "Tahoma",
+                TeamIndicator = {
+                    Enabled = false,
+                    Position = "Right",
+                    UseTeamColor = true,
+                    Color = Color3.fromRGB(255, 255, 255),
+                    Compact = true,
+                    TextSize = 10,
+                },
+                FriendlyIndicator = {
+                    Enabled = false,
+                    Position = "Right",
+                    CheckTeam = true,
+                    CheckFriends = true,
+                    Text = "[F]",
+                    Color = Color3.fromRGB(0, 255, 0),
+                },
                 Distance = {
                     Enabled = true,
                     Unit = "Meters",
+                    StudsPerMeter = 3,
                     Ending = "m",
                     Gap = 5,
-                },
-
-                -- Chams Settings
-                Chams = {
-                    Enabled = true,
-                    Type = "Highlight",
-                    Highlight = {
-                        FillColor = Color3.fromRGB(255, 150, 0),
-                        FillTransparency = 0.7,
-                        OutlineColor = Color3.fromRGB(255, 255, 255),
-                        OutlineTransparency = 1,
-                        VisibleCheck = false,
-                    },
-                    Adornment = {
-                        Color = Color3.fromRGB(255, 150, 0),
-                        VisibleColor = Color3.fromRGB(0, 255, 0),
-                        Transparency = 0.5,
-                        AlwaysOnTop = true,
-                        VisibleCheck = true,
-                    }
-                },
-
-                -- Flags Settings
-                Flags = {
-                    Enabled = true,
-                    Position = "Left",
-                    SideGap = 4,
-                    TextGap = 2,
+                    OutlineStyle = "Full",
                     Font = "Smallest Pixel-7",
                     TextSize = 9,
-                    Options = {
-                        Idle = true,
-                        Moving = true,
-                    },
-                    Colors = {
-                        Idle = Color3.fromRGB(255, 255, 255),
-                        Moving = Color3.fromRGB(255, 150, 0),
-                    }
+                    Color = Color3.fromRGB(255, 255, 255),
                 },
-
-                -- HealthBar Settings
-                HealthBar = {
+                Weapon = {
+                    Enabled = false,
+                    Gap = 1,
+                    OutlineStyle = "Full",
+                    Font = "Proggy Clean",
+                    TextSize = 12,
+                    Color = Color3.fromRGB(255, 255, 255),
+                    InventoryPath = "",
+                    UseToolFallback = true,
+                },
+                Flags = {
                     Enabled = true,
-                    Position = "Bottom",
-                    SideGap = 2,
-                    Width = 2,
-                    ShowText = true,
-                    TextFollowBar = true,
-                    HideWhenFullHP = false,
-                    FollowGradientColorText = true,
-                    Outline = {
-                        Enabled = true,
-                        Color = Color3.fromRGB(0, 0, 0),
-                    },
-                    Gradient = {
-                        Enabled = true,
-                        Color1 = Color3.fromRGB(0, 255, 0),
-                        Color2 = Color3.fromRGB(255, 255, 0),
-                        Color3 = Color3.fromRGB(255, 0, 0),
-                    }
+                    Position = "Right",
+                    Gap = 2,
+                    SideGap = 4,
+                    TextGap = 2,
+                    OutlineStyle = "None",
+                    Font = "Proggy Clean",
+                    TextSize = 9,
+                    Options = {},
+                    Colors = {},
                 },
-
-                -- Skeleton 
                 Skeleton = {
                     Enabled = false,
                     Color = Color3.fromRGB(255, 255, 255),
                     Outline = true,
                     OutlineColor = Color3.fromRGB(0, 0, 0),
                     Thickness = 1,
-                }
-            }
-        }
-    }
+                },
+                HealthBar = {
+                    Enabled = true,
+                    Position = "Top",
+                    SideGap = 2,
+                    Width = 2,
+                    ShowText = true,
+                    TextFollowBar = true,
+                    HideWhenFullHP = true,
+                    FollowGradientColorText = true,
+                    Font = "Smallest Pixel-7",
+                    TextSize = 9,
+                    Outline = {
+                        Style = "Full",
+                        Color = Color3.fromRGB(0, 0, 0),
+                    },
+                    Gradient = {
+                        Enabled = false,
+                        Color1 = Color3.fromRGB(0, 255, 0),
+                        Color2 = Color3.fromRGB(255, 255, 0),
+                        Color3 = Color3.fromRGB(255, 0, 0),
+                    },
+                },
+                Chams = {
+                    Enabled = false,
+                    Type = "Highlight",
+                    Highlight = {
+                        FillColor = Color3.fromRGB(255, 255, 255),
+                        FillTransparency = 1,
+                        OutlineColor = Color3.fromRGB(255, 255, 255),
+                        OutlineTransparency = 0,
+                        VisibleCheck = false,
+                    },
+                    Adornment = {
+                        Color = Color3.fromRGB(59, 144, 204),
+                        VisibleColor = Color3.fromRGB(59, 204, 90),
+                        Transparency = 0.7,
+                        AlwaysOnTop = true,
+                        VisibleCheck = false,
+                    },
+                    MeshChams = {
+                        FillColor = Color3.fromRGB(59, 144, 204),
+                        FillTransparency = 0.6,
+                        OutlineColor = Color3.fromRGB(255, 255, 255),
+                        OutlineTransparency = 0,
+                        VisibleCheck = false,
+                    },
+                },
+            },
+        },
+    },
 })
