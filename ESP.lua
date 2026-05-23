@@ -734,8 +734,7 @@ local function CreateLine(parent)
     local outline = Instance.new("Frame")
     outline.BorderSizePixel = 0
     outline.BackgroundColor3 = ESPConfig.Outlines.Color
-    outline.ZIndex = 0
-    outline.Parent = line
+    outline.Parent = parent
 
     return line, outline
 end
@@ -1358,6 +1357,15 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             espObj.CornerLines[i].Position = UDim2.new(0, data[1], 0, data[2])
             espObj.CornerLines[i].Size = UDim2.new(0, data[3], 0, data[4])
         end
+
+        if hasOutline then
+            local ot = outlineThickness
+            for i = 1, 8 do
+                local cd = cornerData[i]
+                espObj.CornerOutlines[i].Position = UDim2.new(0, cd[1] - ot, 0, cd[2] - ot)
+                espObj.CornerOutlines[i].Size = UDim2.new(0, cd[3] + 2 * ot, 0, cd[4] + 2 * ot)
+            end
+        end
     elseif useCircleBoxes then
         local segments = CIRCLE_BOX_SEGMENTS
         local center = Vector2.new(x + (sx / 2), y + (sy / 2))
@@ -1396,20 +1404,27 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     for i = 1, 4 do
         espObj.Lines[i].Visible = boxesEnabled and not useCornerBoxes and not useCircleBoxes
         espObj.Outlines[i].Visible = boxesEnabled and hasOutline and not useCornerBoxes and not useCircleBoxes
-
-        espObj.Outlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
-        espObj.Outlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
         espObj.Outlines[i].BackgroundTransparency = outlineTransparency
         espObj.Lines[i].BackgroundColor3 = boxColor
         espObj.Outlines[i].BackgroundColor3 = outlineColor
     end
 
+    -- outline absolute positions (siblings now, not children of lines)
+    if hasOutline and boxesEnabled and not useCornerBoxes and not useCircleBoxes then
+        local ot = outlineThickness
+        espObj.Outlines[1].Position = UDim2.new(0, x - ot, 0, y - ot)
+        espObj.Outlines[1].Size = UDim2.new(0, sx + 2 * ot, 0, t + 2 * ot)
+        espObj.Outlines[2].Position = UDim2.new(0, x - ot, 0, y + sy - ot)
+        espObj.Outlines[2].Size = UDim2.new(0, sx + t + 2 * ot, 0, t + 2 * ot)
+        espObj.Outlines[3].Position = UDim2.new(0, x - ot, 0, y - ot)
+        espObj.Outlines[3].Size = UDim2.new(0, t + 2 * ot, 0, sy + 2 * ot)
+        espObj.Outlines[4].Position = UDim2.new(0, x + sx - ot, 0, y - ot)
+        espObj.Outlines[4].Size = UDim2.new(0, t + 2 * ot, 0, sy + t + 2 * ot)
+    end
+
     for i = 1, 8 do
         espObj.CornerLines[i].Visible = boxesEnabled and useCornerBoxes
         espObj.CornerOutlines[i].Visible = boxesEnabled and hasOutline and useCornerBoxes
-
-        espObj.CornerOutlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
-        espObj.CornerOutlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
         espObj.CornerOutlines[i].BackgroundTransparency = outlineTransparency
         espObj.CornerLines[i].BackgroundColor3 = boxColor
         espObj.CornerOutlines[i].BackgroundColor3 = outlineColor
