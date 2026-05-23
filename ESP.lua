@@ -197,6 +197,7 @@ local ESPConfig = {
     LimitFPS = 70, -- Set to 0 to disable limit
     DynamicBoxes = true,
     DynamicBoxesCheap = false,           -- needs DynamicBoxes enabled, only tracks main parts
+    DynamicBoxesIncludeAll = false,      -- needs DynamicBoxes enabled, includes every BasePart in the model
     VisibilityCheckRate = 0.3,
 
     -- boxes
@@ -1859,26 +1860,12 @@ local Get2DBoundingBox = LPHNoVirtualize(function(instance)
         return true, Vector2.new((minX + maxX) / 2, (minY + maxY) / 2), Vector2.new(maxX - minX, maxY - minY)
     else
         -- DYNAMIC BOX
-        local humanoid = instance:IsA("Model") and instance:FindFirstChild("Humanoid")
-
-        if ESPConfig.DynamicBoxesCheap and humanoid then
-            -- head to feet, way less calls
-            local head = instance:FindFirstChild("Head")
-            local foot = instance:FindFirstChild("LeftFoot") or instance:FindFirstChild("RightFoot") or
-                         instance:FindFirstChild("Left Leg") or instance:FindFirstChild("Right Leg")
-            local topPos = head and head.Position or (rootPart.Position + Vector3.new(0, 3, 0))
-            local botPos = foot and foot.Position or (rootPart.Position - Vector3.new(0, 3, 0))
-            local top2D = Camera:WorldToViewportPoint(topPos)
-            local bot2D = Camera:WorldToViewportPoint(botPos)
-            local height = math.abs(top2D.Y - bot2D.Y)
-            return true, Vector2.new(position.X, (top2D.Y + bot2D.Y) / 2), Vector2.new(height * 0.6, height)
-        end
-
         local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
         local parts = {}
         if instance:IsA("Model") then
+            local includeAll = ESPConfig.DynamicBoxesIncludeAll
             for _, v in ipairs(instance:GetChildren()) do
-                if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" and v.Transparency ~= 1 then
+                if v:IsA("BasePart") and (includeAll or (v.Name ~= "HumanoidRootPart" and v.Transparency ~= 1)) then
                     table.insert(parts, v)
                 end
             end
@@ -1888,24 +1875,43 @@ local Get2DBoundingBox = LPHNoVirtualize(function(instance)
 
         if #parts == 0 then return false, nil, nil end
 
-        for _, part in ipairs(parts) do
-            local cf, size = part.CFrame, part.Size
-            local corners = {
-                cf * Vector3.new(size.X / 2, size.Y / 2, size.Z / 2),
-                cf * Vector3.new(-size.X / 2, size.Y / 2, size.Z / 2),
-                cf * Vector3.new(size.X / 2, -size.Y / 2, size.Z / 2),
-                cf * Vector3.new(-size.X / 2, -size.Y / 2, size.Z / 2),
-                cf * Vector3.new(size.X / 2, size.Y / 2, -size.Z / 2),
-                cf * Vector3.new(-size.X / 2, size.Y / 2, -size.Z / 2),
-                cf * Vector3.new(size.X / 2, -size.Y / 2, -size.Z / 2),
-                cf * Vector3.new(-size.X / 2, -size.Y / 2, -size.Z / 2),
-            }
-            for _, corner in ipairs(corners) do
-                local screenPos = Camera:WorldToViewportPoint(corner)
-                if screenPos.X < minX then minX = screenPos.X end
-                if screenPos.X > maxX then maxX = screenPos.X end
-                if screenPos.Y < minY then minY = screenPos.Y end
-                if screenPos.Y > maxY then maxY = screenPos.Y end
+        if ESPConfig.DynamicBoxesCheap then
+            for _, part in ipairs(parts) do
+                local cf, size = part.CFrame, part.Size
+                local hs = size / 2
+                local p1 = cf * Vector3.new(hs.X, hs.Y, hs.Z)
+                local p2 = cf * Vector3.new(-hs.X, -hs.Y, -hs.Z)
+                local s1 = Camera:WorldToViewportPoint(p1)
+                local s2 = Camera:WorldToViewportPoint(p2)
+                if s1.X < minX then minX = s1.X end
+                if s1.X > maxX then maxX = s1.X end
+                if s1.Y < minY then minY = s1.Y end
+                if s1.Y > maxY then maxY = s1.Y end
+                if s2.X < minX then minX = s2.X end
+                if s2.X > maxX then maxX = s2.X end
+                if s2.Y < minY then minY = s2.Y end
+                if s2.Y > maxY then maxY = s2.Y end
+            end
+        else
+            for _, part in ipairs(parts) do
+                local cf, size = part.CFrame, part.Size
+                local corners = {
+                    cf * Vector3.new(size.X / 2, size.Y / 2, size.Z / 2),
+                    cf * Vector3.new(-size.X / 2, size.Y / 2, size.Z / 2),
+                    cf * Vector3.new(size.X / 2, -size.Y / 2, size.Z / 2),
+                    cf * Vector3.new(-size.X / 2, -size.Y / 2, size.Z / 2),
+                    cf * Vector3.new(size.X / 2, size.Y / 2, -size.Z / 2),
+                    cf * Vector3.new(-size.X / 2, size.Y / 2, -size.Z / 2),
+                    cf * Vector3.new(size.X / 2, -size.Y / 2, -size.Z / 2),
+                    cf * Vector3.new(-size.X / 2, -size.Y / 2, -size.Z / 2),
+                }
+                for _, corner in ipairs(corners) do
+                    local screenPos = Camera:WorldToViewportPoint(corner)
+                    if screenPos.X < minX then minX = screenPos.X end
+                    if screenPos.X > maxX then maxX = screenPos.X end
+                    if screenPos.Y < minY then minY = screenPos.Y end
+                    if screenPos.Y > maxY then maxY = screenPos.Y end
+                end
             end
         end
         return true, Vector2.new((minX + maxX) / 2, (minY + maxY) / 2), Vector2.new(maxX - minX, maxY - minY)
