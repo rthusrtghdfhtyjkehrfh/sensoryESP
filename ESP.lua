@@ -1,25 +1,9 @@
 --[[
-  // dacces ESP //
-  // v1.0.6 //
-  // 16/5/2026 //
+	sensory esp
+	authors: dacces, Gemini, OpenAI, Claude, Deepseek
 
-  Made with love by Dacces, Gemini 3 flash, Gemini 3.1 high / low, and Claude Sonnet 4.6
-  This script is free to use, and could not be sold. if you bought this script, you got scammed.
-  If you say that you OWN or MADE this script, id be not happy and be mad. don't do it. please.
-  You can easily and freely use it on your own projects. I dont care. Or even paste or skid it.
-  Every script that has been usen or taken that is not ai generated, were from all open sources.
-
-  Inspired by:
-  https://v3rm.net/threads/chatgpt-esp-by-me.28629/#post-242437 > https://raw.githubusercontent.com/emptyusesdx9/astral.rip/refs/heads/main/esp
-
-  Credits:
-  actual people: dacces / finobe / dualesp / nocturnal
-  AIs used: gemini 3 flash, gemini 3.1 high / low, claude sonnet 4.6
-  font credits
-  f1nobe and dual esp guy
-
-  Purpose of this script?
-  Proves that no ESP will be unique.
+	inspired by: 
+	https://v3rm.net/threads/chatgpt-esp-by-me.28629/#post-242437
 ]]
 
 if not LPH_OBFUSCATED then
@@ -626,7 +610,7 @@ local FontsToDownload = {
 
 local ESPFonts = { Loaded = {} }
 local FontsStillLoading = true
-local CIRCLE_BOX_SEGMENTS = 36
+
 
 local SKELETON_BONE_DEFS = {
     { "Head",                                    "UpperTorso|Torso" },
@@ -747,8 +731,7 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         Outlines = {},
         CornerLines = {},
         CornerOutlines = {},
-        CircleLines = {},
-        CircleOutlines = {},
+
         FlagLabels = {},
         LastVisCheck = 0,
         CachedModelVisible = true
@@ -785,18 +768,6 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         espObj.CornerOutlines[i] = outline
     end
 
-    for i = 1, CIRCLE_BOX_SEGMENTS do
-        local line = Drawing.new("Line")
-        line.Visible = false
-        line.ZIndex = 2
-        espObj.CircleLines[i] = line
-
-        local outline = Drawing.new("Line")
-        outline.Visible = false
-        outline.ZIndex = 1
-        espObj.CircleOutlines[i] = outline
-    end
-
     local function SetupLabel(label)
         label.BackgroundTransparency = 1
         label.Size = UDim2.new(0, 100, 0, ESPConfig.TextSize)
@@ -816,6 +787,7 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         stroke.LineJoinMode = Enum.LineJoinMode.Miter
         stroke.Enabled = ESPConfig.TextOutline
         stroke.Parent = label
+        label._Stroke = stroke
     end
 
     local nameText = Instance.new("TextLabel")
@@ -921,8 +893,6 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         if espObj.Highlight then espObj.Highlight:Destroy() end
         if espObj.MeshShell then espObj.MeshShell:Destroy() end
         for _, a in pairs(espObj.Adornments) do a:Destroy() end
-        for _, line in ipairs(espObj.CircleLines) do line:Remove() end
-        for _, outline in ipairs(espObj.CircleOutlines) do outline:Remove() end
     end
 
     return espObj
@@ -931,7 +901,10 @@ end)
 local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, distanceStuds, instance, isCheap, nonHuman,
                                               noStatus,
                                               configOverride, onScreen)
+    local cfgCache = {}
     local function GetCfg(path)
+        local cached = cfgCache[path]
+        if cached ~= nil then return cached end
         local keys = path:split(".")
         local current = configOverride
         local default = ESPConfig
@@ -946,12 +919,16 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             end
         end
 
-        if foundOverride then return current end
+        if foundOverride then
+            cfgCache[path] = current
+            return current
+        end
 
         local currentDefault = default
         for _, key in ipairs(keys) do
             currentDefault = currentDefault[key]
         end
+        cfgCache[path] = currentDefault
         return currentDefault
     end
 
@@ -1175,10 +1152,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     -- Exit early if not on screen for 2D elements
     if not onScreen or not position or not size then
         espObj.Container.Visible = false
-        for i = 1, #espObj.CircleLines do
-            espObj.CircleLines[i].Visible = false
-            espObj.CircleOutlines[i].Visible = false
-        end
         return
     end
 
@@ -1189,7 +1162,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     end
 
     local function ApplyTextOutline(label, style, color)
-        local stroke = label:FindFirstChildOfClass("UIStroke")
+        local stroke = label._Stroke or label:FindFirstChildOfClass("UIStroke")
         if not stroke then return end
         if style == "None" then
             stroke.Enabled = false
@@ -1290,10 +1263,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             espObj.Lines[i].Visible = false
             espObj.Outlines[i].Visible = false
         end
-        for i = 1, #espObj.CircleLines do
-            espObj.CircleLines[i].Visible = false
-            espObj.CircleOutlines[i].Visible = false
-        end
         espObj.HealthBarOutline.Visible = false
         espObj.HealthText.Visible = false
         espObj.WeaponText.Visible = false
@@ -1330,7 +1299,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     local boxesEnabled = GetCfg("Boxes")
     local boxType = GetCfg("BoxType") or "Normal"
     local useCornerBoxes = boxType == "Corner"
-    local useCircleBoxes = boxType == "Circle"
+
     local outlineStyle = GetCfg("Outlines.Style")
     local outlineColor = GetCfg("Outlines.Color")
     local outlineThickness = GetCfg("Outlines.Thickness")
@@ -1359,44 +1328,11 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             espObj.CornerLines[i].Position = UDim2.new(0, data[1], 0, data[2])
             espObj.CornerLines[i].Size = UDim2.new(0, data[3], 0, data[4])
         end
-    elseif useCircleBoxes then
-        local segments = CIRCLE_BOX_SEGMENTS
-        local center = Vector2.new(x + (sx / 2), y + (sy / 2))
-        local radiusInset = math.max(t + outlineThickness, 1)
-        local rx = math.max((sx / 2) - radiusInset, t * 2)
-        local ry = math.max((sy / 2) - radiusInset, t * 2)
-
-        local angleStep = (math.pi * 2) / segments
-        for i = 1, #espObj.CircleLines do
-            local line = espObj.CircleLines[i]
-            local outline = espObj.CircleOutlines[i]
-            if i <= segments then
-                local a1 = (i - 1) * angleStep
-                local a2 = i * angleStep
-                local p1 = center + Vector2.new(math.cos(a1) * rx, math.sin(a1) * ry)
-                local p2 = center + Vector2.new(math.cos(a2) * rx, math.sin(a2) * ry)
-                line.From = p1
-                line.To = p2
-                line.Color = boxColor
-                line.Thickness = t
-                line.Visible = boxesEnabled and useCircleBoxes
-
-                outline.From = p1
-                outline.To = p2
-                outline.Color = outlineColor
-                outline.Thickness = t + (outlineThickness * 2)
-                outline.Visible = boxesEnabled and hasOutline and useCircleBoxes
-                outline.Transparency = outlineTransparency
-            else
-                line.Visible = false
-                outline.Visible = false
-            end
-        end
     end
 
     for i = 1, 4 do
-        espObj.Lines[i].Visible = boxesEnabled and not useCornerBoxes and not useCircleBoxes
-        espObj.Outlines[i].Visible = boxesEnabled and hasOutline and not useCornerBoxes and not useCircleBoxes
+        espObj.Lines[i].Visible = boxesEnabled and not useCornerBoxes
+        espObj.Outlines[i].Visible = boxesEnabled and hasOutline and not useCornerBoxes
 
         espObj.Outlines[i].Position = UDim2.new(0, -outlineThickness, 0, -outlineThickness)
         espObj.Outlines[i].Size = UDim2.new(1, outlineThickness * 2, 1, outlineThickness * 2)
@@ -1416,17 +1352,10 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.CornerOutlines[i].BackgroundColor3 = outlineColor
     end
 
-    if not useCircleBoxes or not boxesEnabled then
-        for i = 1, #espObj.CircleLines do
-            espObj.CircleLines[i].Visible = false
-            espObj.CircleOutlines[i].Visible = false
-        end
-    end
-
     -- BoxFill logic
     local fill = espObj.BoxFill
     local grad = espObj.BoxFillGradient
-    if GetCfg("BoxFill.Enabled") and boxesEnabled and not useCircleBoxes then
+    if GetCfg("BoxFill.Enabled") and boxesEnabled then
         fill.Visible = true
         fill.Position = UDim2.new(0, x, 0, y)
         fill.Size = UDim2.new(0, sx, 0, sy)
@@ -1585,9 +1514,10 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         espObj.HealthBarOutline.Visible = hpOutlineStyle ~= "None"
         espObj.HealthBarOutline.BackgroundTransparency = 0
         espObj.HealthBarOutline.BackgroundColor3 = GetCfg("HealthBar.Outline.Color")
+        local barWidth
 
         if isHorizontal then
-            local barWidth = math.floor((sx + 1) * healthPercent)
+            barWidth = math.floor((sx + 1) * healthPercent)
             espObj.HealthBarOutline.Size = UDim2.new(0, sx + 3, 0, hpWidth + 2)
 
             if hpPos == "Top" then
@@ -1660,7 +1590,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             ApplyTextOutline(espObj.HealthText, hpOutlineStyle, textOutlineColor)
 
             if isHorizontal then
-                local barWidth = math.floor((sx + 1) * healthPercent)
+                barWidth = math.floor((sx + 1) * healthPercent)
                 local barLeftX = x + barWidth - 1
                 local textY = espObj.HealthBarOutline.Position.Y.Offset
 
@@ -1695,9 +1625,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
 
     -- Flags logic
     for _, label in ipairs(espObj.FlagLabels) do label.Visible = false end
-    if GetCfg("Flags.Enabled") and instance:IsA("Model") and not noStatus then
-        local humanoid = instance:FindFirstChild("Humanoid")
-        if humanoid then
+    if GetCfg("Flags.Enabled") and instance:IsA("Model") and not noStatus and humanoid then
             local state = humanoid:GetState()
             local isMoving = humanoid.MoveDirection.Magnitude > 0
             local isJumping = (state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.FallingDown or state == Enum.HumanoidStateType.Freefall)
@@ -1759,7 +1687,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                         fy + (i - 1) * (flagTextSize + flagTextGap))
                     ApplyTextOutline(label, flagOutlineStyle, textOutlineColor)
                 end
-            end
         end
     end
 
