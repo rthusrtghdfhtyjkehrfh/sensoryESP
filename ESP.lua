@@ -156,6 +156,7 @@ local function EnsureRootInstances()
     end
 end
 
+local labelStrokeMap = setmetatable({}, { __mode = "k" })
 local DrawLine = LPHNoVirtualize(function(line, p1, p2, thickness, color)
     local diff = p2 - p1
     local dist = diff.Magnitude
@@ -787,7 +788,7 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         stroke.LineJoinMode = Enum.LineJoinMode.Miter
         stroke.Enabled = ESPConfig.TextOutline
         stroke.Parent = label
-        label._Stroke = stroke
+        labelStrokeMap[label] = stroke
     end
 
     local nameText = Instance.new("TextLabel")
@@ -1162,7 +1163,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     end
 
     local function ApplyTextOutline(label, style, color)
-        local stroke = label._Stroke or label:FindFirstChildOfClass("UIStroke")
+        local stroke = labelStrokeMap[label] or label:FindFirstChildOfClass("UIStroke")
         if not stroke then return end
         if style == "None" then
             stroke.Enabled = false
