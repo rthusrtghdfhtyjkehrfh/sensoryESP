@@ -302,13 +302,21 @@ local ESPConfig = {
         Color = Color3.fromRGB(255, 255, 255),
         Outline = true,
         OutlineColor = Color3.fromRGB(0, 0, 0),
-        Thickness = 1,
         Gradient = {
             Enabled = false,
             Color1 = Color3.fromRGB(255, 255, 255),
             Color2 = Color3.fromRGB(100, 200, 255),
-            Rotation = 0,
         },
+    },
+
+    -- off-screen arrows
+    OffScreenArrows = {
+        Enabled = true,
+        Size = 14,
+        Color = Color3.fromRGB(255, 255, 255),
+        FOV = 200, -- distance in studs to show arrows (0 = unlimited)
+        Outline = true,
+        OutlineColor = Color3.fromRGB(0, 0, 0),
     },
 
     -- distance
@@ -490,13 +498,6 @@ local ESPConfig = {
                     Color = Color3.fromRGB(255, 255, 255),
                     Outline = true,
                     OutlineColor = Color3.fromRGB(0, 0, 0),
-                    Thickness = 1,
-                    Gradient = {
-                        Enabled = false,
-                        Color1 = Color3.fromRGB(255, 255, 255),
-                        Color2 = Color3.fromRGB(100, 200, 255),
-                        Rotation = 0,
-                    },
                 }
             }
         },
@@ -938,12 +939,37 @@ local CreateESPObj = LPHNoVirtualize(function(name)
 
         local grad = Instance.new("UIGradient")
         grad.Enabled = false
-        grad.Color1 = ESPConfig.Skeleton.Gradient.Color1 or Color3.fromRGB(255, 255, 255)
-        grad.Color2 = ESPConfig.Skeleton.Gradient.Color2 or Color3.fromRGB(100, 200, 255)
-        grad.Rotation = ESPConfig.Skeleton.Gradient.Rotation or 0
+        grad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, ESPConfig.Skeleton.Gradient.Color1 or Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(1, ESPConfig.Skeleton.Gradient.Color2 or Color3.fromRGB(100, 200, 255)),
+        })
         grad.Parent = bone
         espObj.BoneGradients[i] = grad
     end
+
+    local arrowInner = Instance.new("TextLabel")
+    arrowInner.BackgroundTransparency = 1
+    arrowInner.Text = "▲"
+    arrowInner.TextColor3 = ESPConfig.OffScreenArrows.Color
+    arrowInner.TextSize = ESPConfig.OffScreenArrows.Size
+    arrowInner.Font = Enum.Font.Code
+    arrowInner.Size = UDim2.new(0, ESPConfig.OffScreenArrows.Size * 2, 0, ESPConfig.OffScreenArrows.Size * 2)
+    arrowInner.ZIndex = 2
+    arrowInner.Visible = false
+    arrowInner.Parent = container
+    espObj.ArrowInner = arrowInner
+
+    local arrowOutline = Instance.new("TextLabel")
+    arrowOutline.BackgroundTransparency = 1
+    arrowOutline.Text = "▲"
+    arrowOutline.TextColor3 = ESPConfig.OffScreenArrows.OutlineColor
+    arrowOutline.TextSize = ESPConfig.OffScreenArrows.Size + 2
+    arrowOutline.Font = Enum.Font.Code
+    arrowOutline.Size = UDim2.new(0, (ESPConfig.OffScreenArrows.Size + 2) * 2, 0, (ESPConfig.OffScreenArrows.Size + 2) * 2)
+    arrowOutline.ZIndex = 1
+    arrowOutline.Visible = false
+    arrowOutline.Parent = container
+    espObj.ArrowOutline = arrowOutline
 
     espObj.Adornments = {}
     espObj.Highlight = nil
@@ -1209,7 +1235,66 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         end
     end
 
-    -- Exit early if not on screen for 2D elements
+    -- Off-screen arrows (own viewport check, handles both behind-camera and outside-edge)
+    if espObj.ArrowInner and GetCfg("OffScreenArrows.Enabled") and instance:IsA("Model") then
+        local rp = instance.PrimaryPart or instance:FindFirstChild("HumanoidRootPart") or instance:FindFirstChildWhichIsA("BasePart")
+        if rp then
+            local dist = (Camera.CFrame.Position - rp.Position).Magnitude
+            local fov = GetCfg("OffScreenArrows.FOV")
+            if fov == 0 or dist <= fov then
+                local sp = Camera:WorldToViewportPoint(rp.Position)
+                local vp = Camera.ViewportSize
+                local onVp = sp.Z > 0 and sp.X >= 0 and sp.X <= vp.X and sp.Y >= 0 and sp.Y <= vp.Y
+                if not onVp then
+                    local cx, cy = vp.X / 2, vp.Y / 2
+                    local dx, dy = sp.X - cx, sp.Y - cy
+                    local ang = math.atan2(dy, dx)
+                    local pad = GetCfg("OffScreenArrows.Size") + 10
+                    local ex, ey = math.cos(ang), math.sin(ang)
+                    local t = math.huge
+                    if ex ~= 0 then t = math.min(t, (cx - pad) / math.abs(ex)) end
+                    if ey ~= 0 then t = math.min(t, (cy - pad) / math.abs(ey)) end
+                    if t == math.huge then t = 0 end
+
+                    local ax, ay = cx + ex * t, cy + ey * t
+                    local rot = math.deg(ang) + 90
+                    local sz = GetCfg("OffScreenArrows.Size")
+                    local col = GetCfg("OffScreenArrows.Color")
+
+                    if GetCfg("OffScreenArrows.Outline") then
+                        espObj.ArrowOutline.TextSize = sz + 2
+                        espObj.ArrowOutline.TextColor3 = GetCfg("OffScreenArrows.OutlineColor")
+                        espObj.ArrowOutline.Position = UDim2.new(0, ax - sz - 2, 0, ay - sz - 2)
+                        espObj.ArrowOutline.Rotation = rot
+                        espObj.ArrowOutline.Visible = true
+                    else
+                        espObj.ArrowOutline.Visible = false
+                    end
+
+                    espObj.ArrowInner.TextSize = sz
+                    espObj.ArrowInner.TextColor3 = col
+                    espObj.ArrowInner.Position = UDim2.new(0, ax - sz, 0, ay - sz)
+                    espObj.ArrowInner.Rotation = rot
+                    espObj.ArrowInner.Visible = true
+                else
+                    espObj.ArrowInner.Visible = false
+                    espObj.ArrowOutline.Visible = false
+                end
+            else
+                espObj.ArrowInner.Visible = false
+                espObj.ArrowOutline.Visible = false
+            end
+        else
+            espObj.ArrowInner.Visible = false
+            espObj.ArrowOutline.Visible = false
+        end
+    else
+        if espObj.ArrowInner then
+            espObj.ArrowInner.Visible = false
+            espObj.ArrowOutline.Visible = false
+        end
+    end
+
     if not onScreen or not position or not size then
         espObj.Container.Visible = false
         return
@@ -1750,70 +1835,48 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         end
     end
 
-    -- Skeleton logic
+    -- Skeleton logic (Frame-based)
     if GetCfg("Skeleton.Enabled") and instance:IsA("Model") then
         local skeletonOutline = GetCfg("Skeleton.Outline")
-        local skeletonThickness = GetCfg("Skeleton.Thickness")
         local skeletonColor = GetCfg("Skeleton.Color")
         local skeletonOutlineColor = GetCfg("Skeleton.OutlineColor")
         local skeletonGradient = GetCfg("Skeleton.Gradient.Enabled")
 
         local bonePositions = {}
-        local anyOnScreen = false
-
-        for i, def in ipairs(SKELETON_BONE_DEFS) do
-            local boneFrame = espObj.Bones[i]
-            local outlineFrame = espObj.BoneOutlines[i]
-            local grad = espObj.BoneGradients[i]
-
-            local pA = bonePositions[def[1]]
-            if pA == nil then
-                local wp = GetBonePosition(instance, def[1])
-                local sp, on = wp and WtS(Camera, wp)
-                pA = (wp and on) and Vector2.new(sp.X, sp.Y) or false
-                bonePositions[def[1]] = pA
-            end
-
-            local pB = bonePositions[def[2]]
-            if pB == nil then
-                local wp = GetBonePosition(instance, def[2])
-                local sp, on = wp and WtS(Camera, wp)
-                pB = (wp and on) and Vector2.new(sp.X, sp.Y) or false
-                bonePositions[def[2]] = pB
-            end
-
-            if pA and pB then
-                anyOnScreen = true
-                if skeletonOutline then
-                    DrawLine(outlineFrame, pA, pB, skeletonThickness + 2, skeletonOutlineColor)
-                else
-                    outlineFrame.Visible = false
+        for _, def in ipairs(SKELETON_BONE_DEFS) do
+            for _, bn in ipairs(def) do
+                if bonePositions[bn] == nil then
+                    local wp = GetBonePosition(instance, bn)
+                    local sp, on = wp and WtS(Camera, wp)
+                    bonePositions[bn] = (wp and on) and Vector2.new(sp.X, sp.Y) or false
                 end
-                DrawLine(boneFrame, pA, pB, skeletonThickness, skeletonColor)
-                if skeletonGradient then
-                    grad.Enabled = true
-                else
-                    grad.Enabled = false
-                end
-            else
-                boneFrame.Visible = false
-                outlineFrame.Visible = false
-                if grad then grad.Enabled = false end
             end
         end
 
-        -- Hide all bones if nothing was on screen (avoids stale phantom lines at screen edge)
-        if not anyOnScreen then
-            for _, b in ipairs(espObj.Bones) do b.Visible = false end
-            for _, b in ipairs(espObj.BoneOutlines) do b.Visible = false end
+        for i, def in ipairs(SKELETON_BONE_DEFS) do
+            local pA = bonePositions[def[1]]
+            local pB = bonePositions[def[2]]
+
+            if pA and pB then
+                if skeletonOutline then
+                    DrawLine(espObj.BoneOutlines[i], pA, pB, 3, skeletonOutlineColor)
+                else
+                    espObj.BoneOutlines[i].Visible = false
+                end
+
+                DrawLine(espObj.Bones[i], pA, pB, 1, skeletonColor)
+                espObj.BoneGradients[i].Enabled = skeletonGradient
+            else
+                espObj.Bones[i].Visible = false
+                espObj.BoneOutlines[i].Visible = false
+                espObj.BoneGradients[i].Enabled = false
+            end
         end
     else
         if espObj.Bones then
             for _, b in ipairs(espObj.Bones) do b.Visible = false end
             for _, b in ipairs(espObj.BoneOutlines) do b.Visible = false end
-            if espObj.BoneGradients then
-                for _, g in ipairs(espObj.BoneGradients) do g.Enabled = false end
-            end
+            for _, g in ipairs(espObj.BoneGradients) do g.Enabled = false end
         end
     end
 end)
