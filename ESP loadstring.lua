@@ -146,6 +146,7 @@ esp:Load({
         Size = 14,
         Color = Color3.fromRGB(255, 255, 255),
         OrbitRadius = 100,
+        ArrowMode = "Compass", -- "Camera" or "Compass" (top-down from player character)
         Outline = true,
         OutlineColor = Color3.fromRGB(0, 0, 0),
     },
