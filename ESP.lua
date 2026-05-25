@@ -303,6 +303,12 @@ local ESPConfig = {
         Outline = true,
         OutlineColor = Color3.fromRGB(0, 0, 0),
         Thickness = 1,
+        Gradient = {
+            Enabled = false,
+            Color1 = Color3.fromRGB(255, 255, 255),
+            Color2 = Color3.fromRGB(100, 200, 255),
+            Rotation = 0,
+        },
     },
 
     -- distance
@@ -485,6 +491,12 @@ local ESPConfig = {
                     Outline = true,
                     OutlineColor = Color3.fromRGB(0, 0, 0),
                     Thickness = 1,
+                    Gradient = {
+                        Enabled = false,
+                        Color1 = Color3.fromRGB(255, 255, 255),
+                        Color2 = Color3.fromRGB(100, 200, 255),
+                        Rotation = 0,
+                    },
                 }
             }
         },
@@ -614,37 +626,79 @@ local FontsStillLoading = true
 
 
 local SKELETON_BONE_DEFS = {
-    { "Head",                                    "UpperTorso|Torso" },
-    { "UpperTorso|Torso",                        "LowerTorso|Torso" },
-
-    -- Arms
-    { "UpperTorso|Torso",                        "LeftUpperArm|Left Arm|LeftArm" },
-    { "LeftUpperArm|Left Arm|LeftArm",           "LeftLowerArm|Left Lower Arm|LeftHand" },
-    { "LeftLowerArm|Left Lower Arm|LeftHand",    "LeftHand" },
-
-    { "UpperTorso|Torso",                        "RightUpperArm|Right Arm|RightArm" },
-    { "RightUpperArm|Right Arm|RightArm",        "RightLowerArm|Right Lower Arm|RightHand" },
-    { "RightLowerArm|Right Lower Arm|RightHand", "RightHand" },
-
-    -- Legs
-    { "LowerTorso|Torso",                        "LeftUpperLeg|Left Leg|LeftLeg" },
-    { "LeftUpperLeg|Left Leg|LeftLeg",           "LeftLowerLeg|Left Lower Leg|LeftFoot" },
-    { "LeftLowerLeg|Left Lower Leg|LeftFoot",    "LeftFoot" },
-
-    { "LowerTorso|Torso",                        "RightUpperLeg|Right Leg|RightLeg" },
-    { "RightUpperLeg|Right Leg|RightLeg",        "RightLowerLeg|Right Lower Leg|RightFoot" },
-    { "RightLowerLeg|Right Lower Leg|RightFoot", "RightFoot" }
+    -- Spine
+    { "UpperTorso", "LowerTorso" },
+    -- Head to torso
+    { "Head", "UpperTorso" },
+    -- Left arm
+    { "UpperTorso", "LeftUpperArm" },
+    { "LeftUpperArm", "LeftLowerArm" },
+    { "LeftLowerArm", "LeftHand" },
+    -- Right arm
+    { "UpperTorso", "RightUpperArm" },
+    { "RightUpperArm", "RightLowerArm" },
+    { "RightLowerArm", "RightHand" },
+    -- Left leg
+    { "LowerTorso", "LeftUpperLeg" },
+    { "LeftUpperLeg", "LeftLowerLeg" },
+    { "LeftLowerLeg", "LeftFoot" },
+    -- Right leg
+    { "LowerTorso", "RightUpperLeg" },
+    { "RightUpperLeg", "RightLowerLeg" },
+    { "RightLowerLeg", "RightFoot" },
 }
 
-local function FindPartByPatterns(Character, Pattern)
-    local Patterns = Pattern:split("|")
-    for _, pName in ipairs(Patterns) do
-        local found = Character:FindFirstChild(pName)
-        if found and found:IsA("BasePart") then
-            return found
+local function GetBonePosition(character, boneName)
+    local part = character:FindFirstChild(boneName)
+    if part then return part.Position end
+
+    -- R6 fallback
+    if boneName == "Head" then
+        part = character:FindFirstChild("Head")
+    elseif boneName == "UpperTorso" or boneName == "LowerTorso" then
+        part = character:FindFirstChild("Torso")
+        if part and boneName == "LowerTorso" then
+            return (part.CFrame * CFrame.new(0, -1.2, 0)).Position
         end
+    elseif boneName:match("Left") then
+        if boneName == "LeftUpperArm" then
+            part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftArm")
+        elseif boneName == "LeftLowerArm" then
+            part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftArm")
+            if part then return (part.CFrame * CFrame.new(0, -1, 0)).Position end
+        elseif boneName == "LeftHand" then
+            part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftArm")
+            if part then return (part.CFrame * CFrame.new(0, -2, 0)).Position end
+        end
+    elseif boneName:match("Right") then
+        if boneName == "RightUpperArm" then
+            part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightArm")
+        elseif boneName == "RightLowerArm" then
+            part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightArm")
+            if part then return (part.CFrame * CFrame.new(0, -1, 0)).Position end
+        elseif boneName == "RightHand" then
+            part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightArm")
+            if part then return (part.CFrame * CFrame.new(0, -2, 0)).Position end
+        end
+    elseif boneName == "LeftUpperLeg" then
+        part = character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftLeg")
+    elseif boneName == "LeftLowerLeg" then
+        part = character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftLeg")
+        if part then return (part.CFrame * CFrame.new(0, -1, 0)).Position end
+    elseif boneName == "LeftFoot" then
+        part = character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftLeg")
+        if part then return (part.CFrame * CFrame.new(0, -2, 0)).Position end
+    elseif boneName == "RightUpperLeg" then
+        part = character:FindFirstChild("Right Leg") or character:FindFirstChild("RightLeg")
+    elseif boneName == "RightLowerLeg" then
+        part = character:FindFirstChild("Right Leg") or character:FindFirstChild("RightLeg")
+        if part then return (part.CFrame * CFrame.new(0, -1, 0)).Position end
+    elseif boneName == "RightFoot" then
+        part = character:FindFirstChild("Right Leg") or character:FindFirstChild("RightLeg")
+        if part then return (part.CFrame * CFrame.new(0, -2, 0)).Position end
     end
-    return nil
+
+    return part and part.Position
 end
 local FontLoadingCapable = writefile and isfile and getcustomasset
 local function LoadCustomFont(Name, Link)
@@ -870,6 +924,7 @@ local CreateESPObj = LPHNoVirtualize(function(name)
 
     espObj.Bones = {}
     espObj.BoneOutlines = {}
+    espObj.BoneGradients = {}
     for i = 1, #SKELETON_BONE_DEFS do
         local outline = Instance.new("Frame")
         outline.BorderSizePixel = 0
@@ -884,6 +939,11 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         bone.ZIndex = 2
         bone.Parent = container
         espObj.Bones[i] = bone
+
+        local grad = Instance.new("UIGradient")
+        grad.Enabled = false
+        grad.Parent = bone
+        espObj.BoneGradients[i] = grad
     end
 
     espObj.Adornments = {}
@@ -1697,41 +1757,63 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         local skeletonThickness = GetCfg("Skeleton.Thickness")
         local skeletonColor = GetCfg("Skeleton.Color")
         local skeletonOutlineColor = GetCfg("Skeleton.OutlineColor")
+        local skeletonGradient = GetCfg("Skeleton.Gradient.Enabled")
+        local gradColor1 = GetCfg("Skeleton.Gradient.Color1")
+        local gradColor2 = GetCfg("Skeleton.Gradient.Color2")
+        local gradRotation = GetCfg("Skeleton.Gradient.Rotation")
+
+        local bonePositions = {}
+        for _, def in ipairs(SKELETON_BONE_DEFS) do
+            for _, boneName in ipairs(def) do
+                if bonePositions[boneName] == nil then
+                    local worldPos = GetBonePosition(instance, boneName)
+                    if worldPos then
+                        local sp, onSc = WtS(Camera, worldPos)
+                        bonePositions[boneName] = onSc and Vector2.new(sp.X, sp.Y) or false
+                    else
+                        bonePositions[boneName] = false
+                    end
+                end
+            end
+        end
 
         for i, def in ipairs(SKELETON_BONE_DEFS) do
             local boneFrame = espObj.Bones[i]
             local outlineFrame = espObj.BoneOutlines[i]
+            local grad = espObj.BoneGradients[i]
 
-            local partA = FindPartByPatterns(instance, def[1])
-            local partB = FindPartByPatterns(instance, def[2])
+            local pA = bonePositions[def[1]]
+            local pB = bonePositions[def[2]]
 
-            if partA and partB then
-                local posA, onA = WtS(Camera, partA.Position)
-                local posB, onB = WtS(Camera, partB.Position)
-
-                if onA or onB then
-                    local pA = Vector2.new(posA.X, posA.Y)
-                    local pB = Vector2.new(posB.X, posB.Y)
-
-                    if skeletonOutline then
-                        DrawLine(outlineFrame, pA, pB, skeletonThickness + 2, skeletonOutlineColor)
-                    else
-                        outlineFrame.Visible = false
-                    end
-                    DrawLine(boneFrame, pA, pB, skeletonThickness, skeletonColor)
+            if pA and pB then
+                if skeletonOutline then
+                    DrawLine(outlineFrame, pA, pB, skeletonThickness + 2, skeletonOutlineColor)
                 else
-                    boneFrame.Visible = false
                     outlineFrame.Visible = false
+                end
+                DrawLine(boneFrame, pA, pB, skeletonThickness, skeletonColor)
+
+                if skeletonGradient then
+                    grad.Enabled = true
+                    grad.Color1 = gradColor1
+                    grad.Color2 = gradColor2
+                    grad.Rotation = gradRotation
+                else
+                    grad.Enabled = false
                 end
             else
                 boneFrame.Visible = false
                 outlineFrame.Visible = false
+                if grad then grad.Enabled = false end
             end
         end
     else
         if espObj.Bones then
             for _, b in ipairs(espObj.Bones) do b.Visible = false end
             for _, b in ipairs(espObj.BoneOutlines) do b.Visible = false end
+            if espObj.BoneGradients then
+                for _, g in ipairs(espObj.BoneGradients) do g.Enabled = false end
+            end
         end
     end
 end)
