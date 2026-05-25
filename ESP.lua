@@ -652,50 +652,46 @@ local function GetBonePosition(character, boneName)
     local part = character:FindFirstChild(boneName)
     if part then return part.Position end
 
-    -- R6 fallback
+    -- R6 fallback (exact checks, no pattern matching to avoid false positives)
     if boneName == "Head" then
         part = character:FindFirstChild("Head")
-    elseif boneName == "UpperTorso" or boneName == "LowerTorso" then
+    elseif boneName == "UpperTorso" then
         part = character:FindFirstChild("Torso")
-        if part and boneName == "LowerTorso" then
-            return (part.CFrame * CFrame.new(0, -1.2, 0)).Position
-        end
-    elseif boneName:match("Left") then
-        if boneName == "LeftUpperArm" then
-            part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftArm")
-        elseif boneName == "LeftLowerArm" then
-            part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftArm")
-            if part then return (part.CFrame * CFrame.new(0, -1, 0)).Position end
-        elseif boneName == "LeftHand" then
-            part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftArm")
-            if part then return (part.CFrame * CFrame.new(0, -2, 0)).Position end
-        end
-    elseif boneName:match("Right") then
-        if boneName == "RightUpperArm" then
-            part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightArm")
-        elseif boneName == "RightLowerArm" then
-            part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightArm")
-            if part then return (part.CFrame * CFrame.new(0, -1, 0)).Position end
-        elseif boneName == "RightHand" then
-            part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightArm")
-            if part then return (part.CFrame * CFrame.new(0, -2, 0)).Position end
-        end
+    elseif boneName == "LowerTorso" then
+        part = character:FindFirstChild("Torso")
+        if part then return (part.CFrame * CFrame.new(0, -1.2, 0)).Position end
+    elseif boneName == "LeftUpperArm" then
+        part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftArm")
+    elseif boneName == "LeftLowerArm" then
+        part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftArm")
+        if part then return (part.CFrame * CFrame.new(0, -0.8, 0)).Position end
+    elseif boneName == "LeftHand" then
+        part = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftArm")
+        if part then return (part.CFrame * CFrame.new(0, -1.5, 0)).Position end
+    elseif boneName == "RightUpperArm" then
+        part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightArm")
+    elseif boneName == "RightLowerArm" then
+        part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightArm")
+        if part then return (part.CFrame * CFrame.new(0, -0.8, 0)).Position end
+    elseif boneName == "RightHand" then
+        part = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightArm")
+        if part then return (part.CFrame * CFrame.new(0, -1.5, 0)).Position end
     elseif boneName == "LeftUpperLeg" then
         part = character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftLeg")
     elseif boneName == "LeftLowerLeg" then
         part = character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftLeg")
-        if part then return (part.CFrame * CFrame.new(0, -1, 0)).Position end
+        if part then return (part.CFrame * CFrame.new(0, -0.8, 0)).Position end
     elseif boneName == "LeftFoot" then
         part = character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftLeg")
-        if part then return (part.CFrame * CFrame.new(0, -2, 0)).Position end
+        if part then return (part.CFrame * CFrame.new(0, -1.5, 0)).Position end
     elseif boneName == "RightUpperLeg" then
         part = character:FindFirstChild("Right Leg") or character:FindFirstChild("RightLeg")
     elseif boneName == "RightLowerLeg" then
         part = character:FindFirstChild("Right Leg") or character:FindFirstChild("RightLeg")
-        if part then return (part.CFrame * CFrame.new(0, -1, 0)).Position end
+        if part then return (part.CFrame * CFrame.new(0, -0.8, 0)).Position end
     elseif boneName == "RightFoot" then
         part = character:FindFirstChild("Right Leg") or character:FindFirstChild("RightLeg")
-        if part then return (part.CFrame * CFrame.new(0, -2, 0)).Position end
+        if part then return (part.CFrame * CFrame.new(0, -1.5, 0)).Position end
     end
 
     return part and part.Position
@@ -942,6 +938,9 @@ local CreateESPObj = LPHNoVirtualize(function(name)
 
         local grad = Instance.new("UIGradient")
         grad.Enabled = false
+        grad.Color1 = ESPConfig.Skeleton.Gradient.Color1 or Color3.fromRGB(255, 255, 255)
+        grad.Color2 = ESPConfig.Skeleton.Gradient.Color2 or Color3.fromRGB(100, 200, 255)
+        grad.Rotation = ESPConfig.Skeleton.Gradient.Rotation or 0
         grad.Parent = bone
         espObj.BoneGradients[i] = grad
     end
@@ -1758,24 +1757,9 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         local skeletonColor = GetCfg("Skeleton.Color")
         local skeletonOutlineColor = GetCfg("Skeleton.OutlineColor")
         local skeletonGradient = GetCfg("Skeleton.Gradient.Enabled")
-        local gradColor1 = GetCfg("Skeleton.Gradient.Color1")
-        local gradColor2 = GetCfg("Skeleton.Gradient.Color2")
-        local gradRotation = GetCfg("Skeleton.Gradient.Rotation")
 
         local bonePositions = {}
-        for _, def in ipairs(SKELETON_BONE_DEFS) do
-            for _, boneName in ipairs(def) do
-                if bonePositions[boneName] == nil then
-                    local worldPos = GetBonePosition(instance, boneName)
-                    if worldPos then
-                        local sp, onSc = WtS(Camera, worldPos)
-                        bonePositions[boneName] = onSc and Vector2.new(sp.X, sp.Y) or false
-                    else
-                        bonePositions[boneName] = false
-                    end
-                end
-            end
-        end
+        local anyOnScreen = false
 
         for i, def in ipairs(SKELETON_BONE_DEFS) do
             local boneFrame = espObj.Bones[i]
@@ -1783,21 +1767,31 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             local grad = espObj.BoneGradients[i]
 
             local pA = bonePositions[def[1]]
+            if pA == nil then
+                local wp = GetBonePosition(instance, def[1])
+                local sp, on = wp and WtS(Camera, wp)
+                pA = (wp and on) and Vector2.new(sp.X, sp.Y) or false
+                bonePositions[def[1]] = pA
+            end
+
             local pB = bonePositions[def[2]]
+            if pB == nil then
+                local wp = GetBonePosition(instance, def[2])
+                local sp, on = wp and WtS(Camera, wp)
+                pB = (wp and on) and Vector2.new(sp.X, sp.Y) or false
+                bonePositions[def[2]] = pB
+            end
 
             if pA and pB then
+                anyOnScreen = true
                 if skeletonOutline then
                     DrawLine(outlineFrame, pA, pB, skeletonThickness + 2, skeletonOutlineColor)
                 else
                     outlineFrame.Visible = false
                 end
                 DrawLine(boneFrame, pA, pB, skeletonThickness, skeletonColor)
-
                 if skeletonGradient then
                     grad.Enabled = true
-                    grad.Color1 = gradColor1
-                    grad.Color2 = gradColor2
-                    grad.Rotation = gradRotation
                 else
                     grad.Enabled = false
                 end
@@ -1806,6 +1800,12 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 outlineFrame.Visible = false
                 if grad then grad.Enabled = false end
             end
+        end
+
+        -- Hide all bones if nothing was on screen (avoids stale phantom lines at screen edge)
+        if not anyOnScreen then
+            for _, b in ipairs(espObj.Bones) do b.Visible = false end
+            for _, b in ipairs(espObj.BoneOutlines) do b.Visible = false end
         end
     else
         if espObj.Bones then
