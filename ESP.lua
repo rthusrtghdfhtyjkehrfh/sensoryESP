@@ -314,7 +314,7 @@ local ESPConfig = {
         Enabled = true,
         Size = 14,
         Color = Color3.fromRGB(255, 255, 255),
-        FOV = 200, -- distance in studs to show arrows (0 = unlimited)
+        OrbitRadius = 0, -- pixel orbit radius from screen center (0 = clamp to screen edge)
         Outline = true,
         OutlineColor = Color3.fromRGB(0, 0, 0),
     },
@@ -1231,47 +1231,46 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     if espObj.ArrowInner and GetCfg("OffScreenArrows.Enabled") and instance:IsA("Model") then
         local rp = instance.PrimaryPart or instance:FindFirstChild("HumanoidRootPart") or instance:FindFirstChildWhichIsA("BasePart")
         if rp then
-            local dist = (Camera.CFrame.Position - rp.Position).Magnitude
-            local fov = GetCfg("OffScreenArrows.FOV")
-            if fov == 0 or dist <= fov then
-                local sp = Camera:WorldToViewportPoint(rp.Position)
-                local vp = Camera.ViewportSize
-                local onVp = sp.Z > 0 and sp.X >= 0 and sp.X <= vp.X and sp.Y >= 0 and sp.Y <= vp.Y
-                if not onVp then
-                    local cx, cy = vp.X / 2, vp.Y / 2
-                    local dx, dy = sp.X - cx, sp.Y - cy
-                    local ang = math.atan2(dy, dx)
+            local sp = Camera:WorldToViewportPoint(rp.Position)
+            local vp = Camera.ViewportSize
+            local onVp = sp.Z > 0 and sp.X >= 0 and sp.X <= vp.X and sp.Y >= 0 and sp.Y <= vp.Y
+            if not onVp then
+                local cx, cy = vp.X / 2, vp.Y / 2
+                local dx, dy = sp.X - cx, sp.Y - cy
+                local ang = math.atan2(dy, dx)
+                local ex, ey = math.cos(ang), math.sin(ang)
+                local orbit = GetCfg("OffScreenArrows.OrbitRadius")
+                local ax, ay
+                if orbit and orbit > 0 then
+                    ax, ay = cx + ex * orbit, cy + ey * orbit
+                else
                     local pad = GetCfg("OffScreenArrows.Size") + 10
-                    local ex, ey = math.cos(ang), math.sin(ang)
                     local t = math.huge
                     if ex ~= 0 then t = math.min(t, (cx - pad) / math.abs(ex)) end
                     if ey ~= 0 then t = math.min(t, (cy - pad) / math.abs(ey)) end
                     if t == math.huge then t = 0 end
+                    ax, ay = cx + ex * t, cy + ey * t
+                end
 
-                    local ax, ay = cx + ex * t, cy + ey * t
-                    local rot = math.deg(ang) + 90
-                    local sz = GetCfg("OffScreenArrows.Size")
-                    local col = GetCfg("OffScreenArrows.Color")
+                local rot = math.deg(ang) + 90
+                local sz = GetCfg("OffScreenArrows.Size")
+                local col = GetCfg("OffScreenArrows.Color")
 
-                    if GetCfg("OffScreenArrows.Outline") then
-                        espObj.ArrowOutline.TextSize = sz + 2
-                        espObj.ArrowOutline.TextColor3 = GetCfg("OffScreenArrows.OutlineColor")
-                        espObj.ArrowOutline.Position = UDim2.new(0, ax - sz - 2, 0, ay - sz - 2)
-                        espObj.ArrowOutline.Rotation = rot
-                        espObj.ArrowOutline.Visible = true
-                    else
-                        espObj.ArrowOutline.Visible = false
-                    end
-
-                    espObj.ArrowInner.TextSize = sz
-                    espObj.ArrowInner.TextColor3 = col
-                    espObj.ArrowInner.Position = UDim2.new(0, ax - sz, 0, ay - sz)
-                    espObj.ArrowInner.Rotation = rot
-                    espObj.ArrowInner.Visible = true
+                if GetCfg("OffScreenArrows.Outline") then
+                    espObj.ArrowOutline.TextSize = sz + 2
+                    espObj.ArrowOutline.TextColor3 = GetCfg("OffScreenArrows.OutlineColor")
+                    espObj.ArrowOutline.Position = UDim2.new(0, ax - sz - 2, 0, ay - sz - 2)
+                    espObj.ArrowOutline.Rotation = rot
+                    espObj.ArrowOutline.Visible = true
                 else
-                    espObj.ArrowInner.Visible = false
                     espObj.ArrowOutline.Visible = false
                 end
+
+                espObj.ArrowInner.TextSize = sz
+                espObj.ArrowInner.TextColor3 = col
+                espObj.ArrowInner.Position = UDim2.new(0, ax - sz, 0, ay - sz)
+                espObj.ArrowInner.Rotation = rot
+                espObj.ArrowInner.Visible = true
             else
                 espObj.ArrowInner.Visible = false
                 espObj.ArrowOutline.Visible = false
