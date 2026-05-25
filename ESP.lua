@@ -315,6 +315,7 @@ local ESPConfig = {
         Size = 14,
         Color = Color3.fromRGB(255, 255, 255),
         OrbitRadius = 100, -- pixel radius from screen center for the orbit circle
+        ArrowMode = "Camera", -- "Camera" or "Compass" (top-down from player character)
         Outline = true,
         OutlineColor = Color3.fromRGB(0, 0, 0),
     },
@@ -1237,10 +1238,26 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             local onVp = sp.Z > 0 and sp.X >= 0 and sp.X <= vp.X and sp.Y >= 0 and sp.Y <= vp.Y
             if not onVp then
                 local orbit = GetCfg("OffScreenArrows.OrbitRadius")
-                -- Use camera-relative direction (no WorldToViewportPoint mirroring issues)
-                local dir = (rp.Position - Camera.CFrame.Position).Unit
-                local viewDir = Camera.CFrame:VectorToObjectSpace(dir)
-                local nx, ny = viewDir.X, -viewDir.Y
+                local nx, ny, rot
+                if GetCfg("OffScreenArrows.ArrowMode") == "Compass" then
+                    -- Compass: top-down from LocalPlayer's HumanoidRootPart
+                    local playerRoot = LocalPlayer.Character and (
+                        LocalPlayer.Character:FindFirstChild("HumanoidRootPart") or
+                        LocalPlayer.Character:FindFirstChild("Torso") or
+                        LocalPlayer.Character:FindFirstChildWhichIsA("BasePart")
+                    )
+                    local fromPos = playerRoot and playerRoot.Position or Camera.CFrame.Position
+                    local toTarget = (Vector3.new(rp.Position.X, 0, rp.Position.Z) - Vector3.new(fromPos.X, 0, fromPos.Z)).Unit
+                    local rel = playerRoot and playerRoot.CFrame:VectorToObjectSpace(toTarget) or toTarget
+                    nx, ny = rel.X, rel.Z
+                    rot = math.deg(math.atan2(rel.Z, rel.X)) + 90
+                else
+                    -- Camera: direction from camera
+                    local dir = (rp.Position - Camera.CFrame.Position).Unit
+                    local viewDir = Camera.CFrame:VectorToObjectSpace(dir)
+                    nx, ny = viewDir.X, -viewDir.Y
+                    rot = math.deg(math.atan2(-viewDir.Y, viewDir.X)) + 90
+                end
                 local d = math.sqrt(nx * nx + ny * ny)
                 if d > 0.001 then
                     nx, ny = nx / d, ny / d
@@ -1248,8 +1265,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     nx, ny = 0, -1
                 end
                 local ax, ay = cx + nx * orbit, cy + ny * orbit
-
-                local rot = math.deg(math.atan2(-viewDir.Y, viewDir.X)) + 90
                 local sz = GetCfg("OffScreenArrows.Size")
                 local col = GetCfg("OffScreenArrows.Color")
 
