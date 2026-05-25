@@ -145,7 +145,7 @@ esp:Load({
         Enabled = true,
         Size = 14,
         Color = Color3.fromRGB(255, 255, 255),
-        OrbitRadius = 0,
+        OrbitRadius = 100,
         Outline = true,
         OutlineColor = Color3.fromRGB(0, 0, 0),
     },
