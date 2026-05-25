@@ -1363,32 +1363,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 else
                     espObj.ArrowDist.Visible = false
                 end
-                end
-
-                local idx = 0
-                if GetCfg("OffScreenArrows.ShowName") and name and name ~= "" then
-                    espObj.ArrowName.Text = name
-                    posLabel(espObj.ArrowName, idx)
-                    espObj.ArrowName.Visible = true
-                    idx = idx + 1
-                else
-                    espObj.ArrowName.Visible = false
-                end
-
-                if GetCfg("OffScreenArrows.ShowDistance") then
-                    local dUnit = GetCfg("Distance.Unit")
-                    local dVal
-                    if dUnit == "Meters" then
-                        dVal = math.floor(distanceStuds / GetCfg("Distance.StudsPerMeter"))
-                    else
-                        dVal = math.floor(distanceStuds)
-                    end
-                    espObj.ArrowDist.Text = dVal .. GetCfg("Distance.Ending")
-                    posLabel(espObj.ArrowDist, idx)
-                    espObj.ArrowDist.Visible = true
-                else
-                    espObj.ArrowDist.Visible = false
-                end
             else
                 espObj.ArrowInner.Visible = false
                 espObj.ArrowOutline.Visible = false
