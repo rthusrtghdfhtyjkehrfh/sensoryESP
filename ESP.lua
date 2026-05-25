@@ -1336,6 +1336,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     label.Font = aFontObj
                     if aFontLoaded then label.FontFace = aFontLoaded end
                     label.TextSize = aTxtSz
+                    label.TextColor3 = col
                     local lineH = aTxtSz + 1
                     if aSide == "Bottom" then
                         label.Position = UDim2.new(0, ax - 75, 0, ay + sz + aGap + idx * lineH)
