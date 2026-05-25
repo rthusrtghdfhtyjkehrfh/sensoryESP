@@ -130,18 +130,31 @@ esp:Load({
     },
 
     Skeleton = {
-        Enabled = false,
+        Enabled = true,
         Color = Color3.fromRGB(255, 255, 255),
         Outline = true,
         OutlineColor = Color3.fromRGB(0, 0, 0),
-        Thickness = 1,
+        Gradient = {
+            Enabled = true,
+            Color1 = Color3.fromRGB(255, 255, 255),
+            Color2 = Color3.fromRGB(100, 200, 255),
+        },
+    },
+
+    OffScreenArrows = {
+        Enabled = true,
+        Size = 14,
+        Color = Color3.fromRGB(255, 255, 255),
+        FOV = 200,
+        Outline = true,
+        OutlineColor = Color3.fromRGB(0, 0, 0),
     },
 
     Distance = {
         Enabled = true,
         Unit = "Meters",
         StudsPerMeter = 3,
-        Ending = "",
+        Ending = "m",
         Gap = 3,
         OutlineStyle = "Full",
         Font = "Proggy Clean",
@@ -273,7 +286,6 @@ esp:Load({
                     Color = Color3.fromRGB(255, 255, 255),
                     Outline = true,
                     OutlineColor = Color3.fromRGB(0, 0, 0),
-                    Thickness = 1,
                 },
                 HealthBar = {
                     Enabled = true,
