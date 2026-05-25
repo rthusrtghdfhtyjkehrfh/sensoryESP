@@ -172,12 +172,12 @@ end)
 
 local ESPConfig = {
     -- esp checks
-    Enabled = true,
+    Enabled = false,
     Keybind = {
-        Enabled = true,
+        Enabled = false,
         Key = Enum.KeyCode.Insert,
     },
-    Players = true,
+    Players = false,
     LocalPlayer = false,
     LimitFPS = 70, -- Set to 0 to disable limit
     DynamicBoxes = true,
@@ -186,7 +186,7 @@ local ESPConfig = {
     VisibilityCheckRate = 0.3,
 
     -- boxes
-    Boxes = true,
+    Boxes = false,
     BoxType = "Normal", -- "Normal", "Corner", or "Circle"
     BoxColor = Color3.fromRGB(255, 255, 255),
     BoxThickness = 1,
@@ -198,16 +198,16 @@ local ESPConfig = {
 
     -- boxfill
     BoxFill = {
-        Enabled = true,
+        Enabled = false,
         Color = Color3.fromRGB(255, 255, 255),
         Transparency = 0.9,
         Gradient = {
-            Enabled = true,
+            Enabled = false,
             Color1 = Color3.fromRGB(180, 255, 255),
             Color2 = Color3.fromRGB(0, 255, 255),
             Color3 = Color3.fromRGB(0, 120, 255),
             Rotation = 0,
-            Animated = true,
+            Animated = false,
             Speed = 64,          -- degrees per second
             Direction = "Right", -- "Left" or "Right"
         }
@@ -215,14 +215,14 @@ local ESPConfig = {
 
     -- healthbar
     HealthBar = {
-        Enabled = true,
+        Enabled = false,
         Position = "Left", -- "Left", "Right", "Top", "Bottom"
         SideGap = 2,
         Width = 2,
-        ShowText = true,
-        TextFollowBar = true,
-        HideWhenFullHP = true,
-        FollowGradientColorText = true,
+        ShowText = false,
+        TextFollowBar = false,
+        HideWhenFullHP = false,
+        FollowGradientColorText = false,
         Font = "Smallest Pixel-7",
         TextSize = 9,
         Outline = {
@@ -230,7 +230,7 @@ local ESPConfig = {
             Color = Color3.fromRGB(0, 0, 0),
         },
         Gradient = {
-            Enabled = true,
+            Enabled = false,
             Color1 = Color3.fromRGB(0, 255, 0),   -- Full health
             Color2 = Color3.fromRGB(255, 255, 0), -- Mid health
             Color3 = Color3.fromRGB(255, 0, 0),   -- Low health
@@ -238,43 +238,43 @@ local ESPConfig = {
     },
 
     -- names
-    Names = true,
+    Names = false,
     TextSize = 12,
     TextColor = Color3.fromRGB(255, 255, 255),
-    TextOutline = true,
+    TextOutline = false,
     TextOutlineStyle = "Full", -- "Full", "None"
     TextGap = 3,
     Font = "Proggy Clean",
     TeamIndicator = {
-        Enabled = true,
+        Enabled = false,
         Position = "Right", -- "Left" or "Right"
-        UseTeamColor = true,
+        UseTeamColor = false,
         Color = Color3.fromRGB(255, 255, 255),
-        Compact = true,
+        Compact = false,
         TextSize = 10,
     },
     FriendlyIndicator = {
-        Enabled = true,
+        Enabled = false,
         Position = "Right", -- "Left" or "Right"
-        CheckTeam = true,
-        CheckFriends = true,
+        CheckTeam = false,
+        CheckFriends = false,
         Text = "[F]",
         Color = Color3.fromRGB(0, 255, 0),
     },
     Weapon = {
-        Enabled = true,
+        Enabled = false,
         Gap = 1,
         OutlineStyle = "Full",
         Font = "Proggy Clean",
         TextSize = 12,
         Color = Color3.fromRGB(255, 255, 255),
         InventoryPath = "ReplicatedStorage.Players.%NAME%.Inventory",
-        UseToolFallback = true,
+        UseToolFallback = false,
     },
 
     -- flags
     Flags = {
-        Enabled = true,
+        Enabled = false,
         Position = "Right",
         Gap = 2,
         SideGap = 4,
@@ -284,9 +284,9 @@ local ESPConfig = {
         TextSize = 9,
         Options = {
             Idle = false,
-            Moving = true,
-            Jumping = true,
-            Swimming = true,
+            Moving = false,
+            Jumping = false,
+            Swimming = false,
         },
         Colors = {
             Idle = Color3.fromRGB(255, 255, 255),
@@ -300,7 +300,7 @@ local ESPConfig = {
     Skeleton = {
         Enabled = false,
         Color = Color3.fromRGB(255, 255, 255),
-        Outline = true,
+        Outline = false,
         OutlineColor = Color3.fromRGB(0, 0, 0),
         Gradient = {
             Enabled = false,
@@ -311,15 +311,15 @@ local ESPConfig = {
 
     -- off-screen arrows
     OffScreenArrows = {
-        Enabled = true,
+        Enabled = false,
         Size = 14,
         Color = Color3.fromRGB(255, 255, 255),
         OrbitRadius = 100,
         ArrowMode = "Camera",
-        Outline = true,
+        Outline = false,
         OutlineColor = Color3.fromRGB(0, 0, 0),
         Names = {
-            Enabled = true,
+            Enabled = false,
             Font = "Smallest Pixel-7",
             TextSize = 9,
             Color = Color3.fromRGB(255, 255, 255),
@@ -329,11 +329,11 @@ local ESPConfig = {
             Gap = 4,
         },
         Distance = {
-            Enabled = true,
+            Enabled = false,
             Font = "Smallest Pixel-7",
             TextSize = 9,
             Color = Color3.fromRGB(255, 255, 255),
-            Outline = true,
+            Outline = false,
             OutlineColor = Color3.fromRGB(0, 0, 0),
             Side = "Bottom",
             Gap = 2,
@@ -342,10 +342,10 @@ local ESPConfig = {
 
     -- distance
     Distance = {
-        Enabled = true,
+        Enabled = false,
         Unit = "Meters",
         StudsPerMeter = 3,
-        Ending = "",
+        Ending = "m",
         Gap = 3,
         OutlineStyle = "Full",
         Font = "Proggy Clean",
@@ -355,7 +355,7 @@ local ESPConfig = {
 
     -- chams
     Chams = {
-        Enabled = true,
+        Enabled = false,
         Type = "MeshChams", -- "Highlight", "Adornment", or "MeshChams"
 
         Highlight = {
@@ -370,7 +370,7 @@ local ESPConfig = {
             Color = Color3.fromRGB(59, 144, 204),
             VisibleColor = Color3.fromRGB(59, 204, 90),
             Transparency = 0.7,
-            AlwaysOnTop = true,
+            AlwaysOnTop = false,
             VisibleCheck = false,
         },
 
