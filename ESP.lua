@@ -314,7 +314,7 @@ local ESPConfig = {
         Enabled = true,
         Size = 14,
         Color = Color3.fromRGB(255, 255, 255),
-        OrbitRadius = 0, -- pixel orbit radius from screen center (0 = clamp to screen edge)
+        OrbitRadius = 100, -- pixel radius from screen center for the orbit circle
         Outline = true,
         OutlineColor = Color3.fromRGB(0, 0, 0),
     },
@@ -1227,7 +1227,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         end
     end
 
-    -- Off-screen arrows (own viewport check, handles both behind-camera and outside-edge)
+    -- Off-screen arrows (orbit at fixed pixel radius from screen center)
     if espObj.ArrowInner and GetCfg("OffScreenArrows.Enabled") and instance:IsA("Model") then
         local rp = instance.PrimaryPart or instance:FindFirstChild("HumanoidRootPart") or instance:FindFirstChildWhichIsA("BasePart")
         if rp then
@@ -1236,23 +1236,13 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
             local onVp = sp.Z > 0 and sp.X >= 0 and sp.X <= vp.X and sp.Y >= 0 and sp.Y <= vp.Y
             if not onVp then
                 local cx, cy = vp.X / 2, vp.Y / 2
-                local dx, dy = sp.X - cx, sp.Y - cy
-                local ang = math.atan2(dy, dx)
-                local ex, ey = math.cos(ang), math.sin(ang)
                 local orbit = GetCfg("OffScreenArrows.OrbitRadius")
-                local ax, ay
-                if orbit and orbit > 0 then
-                    ax, ay = cx + ex * orbit, cy + ey * orbit
-                else
-                    local pad = GetCfg("OffScreenArrows.Size") + 10
-                    local t = math.huge
-                    if ex ~= 0 then t = math.min(t, (cx - pad) / math.abs(ex)) end
-                    if ey ~= 0 then t = math.min(t, (cy - pad) / math.abs(ey)) end
-                    if t == math.huge then t = 0 end
-                    ax, ay = cx + ex * t, cy + ey * t
-                end
+                local dx, dy = sp.X - cx, sp.Y - cy
+                local dist = math.sqrt(dx * dx + dy * dy)
+                local nx, ny = dx / dist, dy / dist
+                local ax, ay = cx + nx * orbit, cy + ny * orbit
 
-                local rot = math.deg(ang) + 90
+                local rot = math.deg(math.atan2(dy, dx)) + 90
                 local sz = GetCfg("OffScreenArrows.Size")
                 local col = GetCfg("OffScreenArrows.Color")
 
