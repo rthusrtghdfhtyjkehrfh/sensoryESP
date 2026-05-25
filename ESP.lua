@@ -973,12 +973,10 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         l.BackgroundTransparency = 1
         l.Size = UDim2.new(0, 150, 0, 12)
         l.TextStrokeTransparency = 1
-        l.ZIndex = 100
+        l.ZIndex = 110
+        l.TextColor3 = Color3.fromRGB(255, 255, 255)
         l.Visible = false
         l.Parent = ScreenGui
-        local stroke = Instance.new("UIStroke")
-        stroke.Parent = l
-        labelStrokeMap[l] = stroke
         return l
     end
     espObj.ArrowName = makeArrowLabel()
@@ -1336,7 +1334,7 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     label.Font = aFontObj
                     if aFontLoaded then label.FontFace = aFontLoaded end
                     label.TextSize = aTxtSz
-                    label.TextColor3 = col
+                    label.TextColor3 = Color3.fromRGB(255, 255, 255)
                     local lineH = aTxtSz + 1
                     if aSide == "Bottom" then
                         label.Position = UDim2.new(0, ax - 75, 0, ay + sz + aGap + idx * lineH)
@@ -1347,7 +1345,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     else
                         label.Position = UDim2.new(0, ax + sz + aGap, 0, ay - 6 + idx * lineH)
                     end
-                    ApplyTextOutline(label, "Full", Color3.fromRGB(0, 0, 0))
                 end
 
                 local idx = 0
