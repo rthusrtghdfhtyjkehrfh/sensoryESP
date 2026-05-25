@@ -314,10 +314,16 @@ local ESPConfig = {
         Enabled = true,
         Size = 14,
         Color = Color3.fromRGB(255, 255, 255),
-        OrbitRadius = 100, -- pixel radius from screen center for the orbit circle
-        ArrowMode = "Camera", -- "Camera" or "Compass" (top-down from player character)
+        OrbitRadius = 100,
+        ArrowMode = "Camera",
         Outline = true,
         OutlineColor = Color3.fromRGB(0, 0, 0),
+        ShowDistance = true,
+        ShowName = true,
+        TextSide = "Bottom",
+        TextGap = 4,
+        Font = "Smallest Pixel-7",
+        TextSize = 9,
     },
 
     -- distance
@@ -962,6 +968,22 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     arrowOutline.Parent = ScreenGui
     espObj.ArrowOutline = arrowOutline
 
+    local function makeArrowLabel()
+        local l = Instance.new("TextLabel")
+        l.BackgroundTransparency = 1
+        l.Size = UDim2.new(0, 150, 0, 12)
+        l.TextStrokeTransparency = 1
+        l.ZIndex = 100
+        l.Visible = false
+        l.Parent = ScreenGui
+        local stroke = Instance.new("UIStroke")
+        stroke.Parent = l
+        labelStrokeMap[l] = stroke
+        return l
+    end
+    espObj.ArrowName = makeArrowLabel()
+    espObj.ArrowDist = makeArrowLabel()
+
     espObj.Adornments = {}
     espObj.Highlight = nil
 
@@ -972,6 +994,8 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         for _, a in pairs(espObj.Adornments) do a:Destroy() end
         if espObj.ArrowInner then espObj.ArrowInner:Destroy() end
         if espObj.ArrowOutline then espObj.ArrowOutline:Destroy() end
+        if espObj.ArrowName then espObj.ArrowName:Destroy() end
+        if espObj.ArrowDist then espObj.ArrowDist:Destroy() end
     end
 
     return espObj
@@ -1228,6 +1252,22 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         end
     end
 
+    local function ApplyTextOutline(label, style, color)
+        local stroke = labelStrokeMap[label] or label:FindFirstChildOfClass("UIStroke")
+        if not stroke then return end
+        if style == "None" then
+            stroke.Enabled = false
+        elseif style == "Shadow" then
+            stroke.Enabled = true
+            stroke.Thickness = 1
+            stroke.Color = color or Color3.fromRGB(0, 0, 0)
+        else
+            stroke.Enabled = true
+            stroke.Thickness = 1
+            stroke.Color = color or Color3.fromRGB(0, 0, 0)
+        end
+    end
+
     -- Off-screen arrows (orbit at fixed pixel radius from screen center)
     if espObj.ArrowInner and GetCfg("OffScreenArrows.Enabled") and instance:IsA("Model") then
         local rp = instance.PrimaryPart or instance:FindFirstChild("HumanoidRootPart") or instance:FindFirstChildWhichIsA("BasePart")
@@ -1283,18 +1323,74 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 espObj.ArrowInner.Position = UDim2.new(0, ax - sz, 0, ay - sz)
                 espObj.ArrowInner.Rotation = rot
                 espObj.ArrowInner.Visible = true
+
+                -- Arrow text (name + distance)
+                local aFont = GetCfg("OffScreenArrows.Font")
+                local aTxtSz = GetCfg("OffScreenArrows.TextSize")
+                local aSide = GetCfg("OffScreenArrows.TextSide")
+                local aGap = GetCfg("OffScreenArrows.TextGap") or 4
+                local aFontObj = _fontMap[aFont] or Enum.Font.Code
+                local aFontLoaded = ESPFonts.Loaded[aFont]
+
+                local function posLabel(label, idx)
+                    label.Font = aFontObj
+                    if aFontLoaded then label.FontFace = aFontLoaded end
+                    label.TextSize = aTxtSz
+                    local lineH = aTxtSz + 1
+                    if aSide == "Bottom" then
+                        label.Position = UDim2.new(0, ax - 75, 0, ay + sz + aGap + idx * lineH)
+                    elseif aSide == "Top" then
+                        label.Position = UDim2.new(0, ax - 75, 0, ay - sz - aGap - (idx + 1) * lineH)
+                    elseif aSide == "Left" then
+                        label.Position = UDim2.new(0, ax - sz - aGap - 150, 0, ay - 6 + idx * lineH)
+                    else
+                        label.Position = UDim2.new(0, ax + sz + aGap, 0, ay - 6 + idx * lineH)
+                    end
+                    ApplyTextOutline(label, "Full", Color3.fromRGB(0, 0, 0))
+                end
+
+                local idx = 0
+                if GetCfg("OffScreenArrows.ShowName") and name and name ~= "" then
+                    espObj.ArrowName.Text = name
+                    posLabel(espObj.ArrowName, idx)
+                    espObj.ArrowName.Visible = true
+                    idx = idx + 1
+                else
+                    espObj.ArrowName.Visible = false
+                end
+
+                if GetCfg("OffScreenArrows.ShowDistance") then
+                    local dUnit = GetCfg("Distance.Unit")
+                    local dVal
+                    if dUnit == "Meters" then
+                        dVal = math.floor(distanceStuds / GetCfg("Distance.StudsPerMeter"))
+                    else
+                        dVal = math.floor(distanceStuds)
+                    end
+                    espObj.ArrowDist.Text = dVal .. GetCfg("Distance.Ending")
+                    posLabel(espObj.ArrowDist, idx)
+                    espObj.ArrowDist.Visible = true
+                else
+                    espObj.ArrowDist.Visible = false
+                end
             else
                 espObj.ArrowInner.Visible = false
                 espObj.ArrowOutline.Visible = false
+                espObj.ArrowName.Visible = false
+                espObj.ArrowDist.Visible = false
             end
         else
             espObj.ArrowInner.Visible = false
             espObj.ArrowOutline.Visible = false
+            espObj.ArrowName.Visible = false
+            espObj.ArrowDist.Visible = false
         end
     else
         if espObj.ArrowInner then
             espObj.ArrowInner.Visible = false
             espObj.ArrowOutline.Visible = false
+            espObj.ArrowName.Visible = false
+            espObj.ArrowDist.Visible = false
         end
     end
 
@@ -1307,23 +1403,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
     espObj.Container.ZIndex = nonHuman and 1 or 10
     if GetCfg("Names") then
         espObj.Text.Text = name
-    end
-
-    local function ApplyTextOutline(label, style, color)
-        local stroke = labelStrokeMap[label] or label:FindFirstChildOfClass("UIStroke")
-        if not stroke then return end
-        if style == "None" then
-            stroke.Enabled = false
-        elseif style == "Shadow" then
-            -- legacy, treated as Full
-            stroke.Enabled = true
-            stroke.Thickness = 1
-            stroke.Color = color or Color3.fromRGB(0, 0, 0)
-        else
-            stroke.Enabled = true
-            stroke.Thickness = 1
-            stroke.Color = color or Color3.fromRGB(0, 0, 0)
-        end
     end
 
     local textOutlineStyle = GetCfg("TextOutlineStyle")
