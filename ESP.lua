@@ -1233,16 +1233,23 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         if rp then
             local sp = Camera:WorldToViewportPoint(rp.Position)
             local vp = Camera.ViewportSize
+            local cx, cy = vp.X / 2, vp.Y / 2
             local onVp = sp.Z > 0 and sp.X >= 0 and sp.X <= vp.X and sp.Y >= 0 and sp.Y <= vp.Y
             if not onVp then
-                local cx, cy = vp.X / 2, vp.Y / 2
                 local orbit = GetCfg("OffScreenArrows.OrbitRadius")
-                local dx, dy = sp.X - cx, sp.Y - cy
-                local dist = math.sqrt(dx * dx + dy * dy)
-                local nx, ny = dx / dist, dy / dist
+                -- Use camera-relative direction (no WorldToViewportPoint mirroring issues)
+                local dir = (rp.Position - Camera.CFrame.Position).Unit
+                local viewDir = Camera.CFrame:VectorToObjectSpace(dir)
+                local nx, ny = viewDir.X, -viewDir.Y
+                local d = math.sqrt(nx * nx + ny * ny)
+                if d > 0.001 then
+                    nx, ny = nx / d, ny / d
+                else
+                    nx, ny = 0, -1
+                end
                 local ax, ay = cx + nx * orbit, cy + ny * orbit
 
-                local rot = math.deg(math.atan2(dy, dx)) + 90
+                local rot = math.deg(math.atan2(-viewDir.Y, viewDir.X)) + 90
                 local sz = GetCfg("OffScreenArrows.Size")
                 local col = GetCfg("OffScreenArrows.Color")
 
