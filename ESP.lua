@@ -921,7 +921,6 @@ local CreateESPObj = LPHNoVirtualize(function(name)
 
     espObj.Bones = {}
     espObj.BoneOutlines = {}
-    espObj.BoneGradients = {}
     for i = 1, #SKELETON_BONE_DEFS do
         local outline = Instance.new("Frame")
         outline.BorderSizePixel = 0
@@ -936,15 +935,6 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         bone.ZIndex = 2
         bone.Parent = container
         espObj.Bones[i] = bone
-
-        local grad = Instance.new("UIGradient")
-        grad.Enabled = false
-        grad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, ESPConfig.Skeleton.Gradient.Color1 or Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(1, ESPConfig.Skeleton.Gradient.Color2 or Color3.fromRGB(100, 200, 255)),
-        })
-        grad.Parent = bone
-        espObj.BoneGradients[i] = grad
     end
 
     local arrowInner = Instance.new("TextLabel")
@@ -952,11 +942,11 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     arrowInner.Text = "▲"
     arrowInner.TextColor3 = ESPConfig.OffScreenArrows.Color
     arrowInner.TextSize = ESPConfig.OffScreenArrows.Size
-    arrowInner.Font = Enum.Font.Code
+    arrowInner.Font = Enum.Font.SourceSans
     arrowInner.Size = UDim2.new(0, ESPConfig.OffScreenArrows.Size * 2, 0, ESPConfig.OffScreenArrows.Size * 2)
-    arrowInner.ZIndex = 2
+    arrowInner.ZIndex = 100
     arrowInner.Visible = false
-    arrowInner.Parent = container
+    arrowInner.Parent = ScreenGui
     espObj.ArrowInner = arrowInner
 
     local arrowOutline = Instance.new("TextLabel")
@@ -964,11 +954,11 @@ local CreateESPObj = LPHNoVirtualize(function(name)
     arrowOutline.Text = "▲"
     arrowOutline.TextColor3 = ESPConfig.OffScreenArrows.OutlineColor
     arrowOutline.TextSize = ESPConfig.OffScreenArrows.Size + 2
-    arrowOutline.Font = Enum.Font.Code
+    arrowOutline.Font = Enum.Font.SourceSans
     arrowOutline.Size = UDim2.new(0, (ESPConfig.OffScreenArrows.Size + 2) * 2, 0, (ESPConfig.OffScreenArrows.Size + 2) * 2)
-    arrowOutline.ZIndex = 1
+    arrowOutline.ZIndex = 99
     arrowOutline.Visible = false
-    arrowOutline.Parent = container
+    arrowOutline.Parent = ScreenGui
     espObj.ArrowOutline = arrowOutline
 
     espObj.Adornments = {}
@@ -979,6 +969,8 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         if espObj.Highlight then espObj.Highlight:Destroy() end
         if espObj.MeshShell then espObj.MeshShell:Destroy() end
         for _, a in pairs(espObj.Adornments) do a:Destroy() end
+        if espObj.ArrowInner then espObj.ArrowInner:Destroy() end
+        if espObj.ArrowOutline then espObj.ArrowOutline:Destroy() end
     end
 
     return espObj
@@ -1840,7 +1832,6 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
         local skeletonOutline = GetCfg("Skeleton.Outline")
         local skeletonColor = GetCfg("Skeleton.Color")
         local skeletonOutlineColor = GetCfg("Skeleton.OutlineColor")
-        local skeletonGradient = GetCfg("Skeleton.Gradient.Enabled")
 
         local bonePositions = {}
         for _, def in ipairs(SKELETON_BONE_DEFS) do
@@ -1865,18 +1856,15 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 end
 
                 DrawLine(espObj.Bones[i], pA, pB, 1, skeletonColor)
-                espObj.BoneGradients[i].Enabled = skeletonGradient
             else
                 espObj.Bones[i].Visible = false
                 espObj.BoneOutlines[i].Visible = false
-                espObj.BoneGradients[i].Enabled = false
             end
         end
     else
         if espObj.Bones then
             for _, b in ipairs(espObj.Bones) do b.Visible = false end
             for _, b in ipairs(espObj.BoneOutlines) do b.Visible = false end
-            for _, g in ipairs(espObj.BoneGradients) do g.Enabled = false end
         end
     end
 end)
