@@ -318,12 +318,26 @@ local ESPConfig = {
         ArrowMode = "Camera",
         Outline = true,
         OutlineColor = Color3.fromRGB(0, 0, 0),
-        ShowDistance = true,
-        ShowName = true,
-        TextSide = "Bottom",
-        TextGap = 4,
-        Font = "Smallest Pixel-7",
-        TextSize = 9,
+        Names = {
+            Enabled = true,
+            Font = "Smallest Pixel-7",
+            TextSize = 9,
+            Color = Color3.fromRGB(255, 255, 255),
+            Outline = true,
+            OutlineColor = Color3.fromRGB(0, 0, 0),
+            Side = "Bottom",
+            Gap = 4,
+        },
+        Distance = {
+            Enabled = true,
+            Font = "Smallest Pixel-7",
+            TextSize = 9,
+            Color = Color3.fromRGB(255, 255, 255),
+            Outline = true,
+            OutlineColor = Color3.fromRGB(0, 0, 0),
+            Side = "Bottom",
+            Gap = 2,
+        },
     },
 
     -- distance
@@ -977,6 +991,9 @@ local CreateESPObj = LPHNoVirtualize(function(name)
         l.TextColor3 = Color3.fromRGB(255, 255, 255)
         l.Visible = false
         l.Parent = ScreenGui
+        local stroke = Instance.new("UIStroke")
+        stroke.Parent = l
+        labelStrokeMap[l] = stroke
         return l
     end
     espObj.ArrowName = makeArrowLabel()
@@ -1316,8 +1333,9 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     espObj.ArrowOutline.Visible = false
                 end
 
+                local arrowFontObj = _fontMap[GetCfg("OffScreenArrows.Font")] or Enum.Font.SourceSans
                 espObj.ArrowInner.Text = "▲"
-                espObj.ArrowInner.Font = Enum.Font.SourceSans
+                espObj.ArrowInner.Font = arrowFontObj
                 espObj.ArrowInner.TextSize = sz
                 espObj.ArrowInner.TextColor3 = col
                 espObj.ArrowInner.Position = UDim2.new(0, ax - sz, 0, ay - sz)
@@ -1325,27 +1343,50 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                 espObj.ArrowInner.Rotation = rot
                 espObj.ArrowInner.Visible = true
 
-                -- Arrow name + distance (separate labels, simple - no stroke)
-                local aFont = GetCfg("OffScreenArrows.Font")
-                local aTxtSz = GetCfg("OffScreenArrows.TextSize")
-                local aFontObj = _fontMap[aFont] or Enum.Font.Code
-                local aFontLoaded = ESPFonts.Loaded[aFont]
+                -- Arrow name + distance (separate sub-configs)
                 local textY = ay + sz + 4
 
-                if GetCfg("OffScreenArrows.ShowName") and name and name ~= "" then
-                    espObj.ArrowName.Font = aFontObj
-                    if aFontLoaded then espObj.ArrowName.FontFace = aFontLoaded end
-                    espObj.ArrowName.TextSize = aTxtSz
-                    espObj.ArrowName.TextColor3 = Color3.fromRGB(255, 255, 255)
+                if GetCfg("OffScreenArrows.Names.Enabled") and name and name ~= "" then
+                    local nFont = GetCfg("OffScreenArrows.Names.Font")
+                    local nTxtSz = GetCfg("OffScreenArrows.Names.TextSize")
+                    local nFontObj = _fontMap[nFont] or Enum.Font.Code
+                    local nFontLoaded = ESPFonts.Loaded[nFont]
+                    local nSide = GetCfg("OffScreenArrows.Names.Side")
+                    local nGap = GetCfg("OffScreenArrows.Names.Gap") or 4
+                    local nCol = GetCfg("OffScreenArrows.Names.Color")
+                    local nOut = GetCfg("OffScreenArrows.Names.Outline")
+                    local nOutCol = GetCfg("OffScreenArrows.Names.OutlineColor")
+                    espObj.ArrowName.Font = nFontObj
+                    if nFontLoaded then espObj.ArrowName.FontFace = nFontLoaded end
+                    espObj.ArrowName.TextSize = nTxtSz
+                    espObj.ArrowName.TextColor3 = nCol
                     espObj.ArrowName.Text = name
-                    espObj.ArrowName.Position = UDim2.new(0, ax - 75, 0, textY)
+                    if nSide == "Top" then
+                        espObj.ArrowName.Position = UDim2.new(0, ax - 75, 0, ay - sz - nGap - nTxtSz)
+                    elseif nSide == "Left" then
+                        espObj.ArrowName.Position = UDim2.new(0, ax - sz - nGap - 150, 0, ay - 6)
+                    elseif nSide == "Right" then
+                        espObj.ArrowName.Position = UDim2.new(0, ax + sz + nGap, 0, ay - 6)
+                    else
+                        espObj.ArrowName.Position = UDim2.new(0, ax - 75, 0, textY)
+                        textY = textY + nTxtSz + 1
+                    end
+                    ApplyTextOutline(espObj.ArrowName, nOut and "Full" or "None", nOutCol or Color3.fromRGB(0, 0, 0))
                     espObj.ArrowName.Visible = true
-                    textY = textY + aTxtSz + 1
                 else
                     espObj.ArrowName.Visible = false
                 end
 
-                if GetCfg("OffScreenArrows.ShowDistance") then
+                if GetCfg("OffScreenArrows.Distance.Enabled") then
+                    local dFont = GetCfg("OffScreenArrows.Distance.Font")
+                    local dTxtSz = GetCfg("OffScreenArrows.Distance.TextSize")
+                    local dFontObj = _fontMap[dFont] or Enum.Font.Code
+                    local dFontLoaded = ESPFonts.Loaded[dFont]
+                    local dSide = GetCfg("OffScreenArrows.Distance.Side")
+                    local dGap = GetCfg("OffScreenArrows.Distance.Gap") or 2
+                    local dCol = GetCfg("OffScreenArrows.Distance.Color")
+                    local dOut = GetCfg("OffScreenArrows.Distance.Outline")
+                    local dOutCol = GetCfg("OffScreenArrows.Distance.OutlineColor")
                     local dUnit = GetCfg("Distance.Unit")
                     local dVal
                     if dUnit == "Meters" then
@@ -1353,12 +1394,21 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     else
                         dVal = math.floor(distanceStuds)
                     end
-                    espObj.ArrowDist.Font = aFontObj
-                    if aFontLoaded then espObj.ArrowDist.FontFace = aFontLoaded end
-                    espObj.ArrowDist.TextSize = aTxtSz
-                    espObj.ArrowDist.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    espObj.ArrowDist.Font = dFontObj
+                    if dFontLoaded then espObj.ArrowDist.FontFace = dFontLoaded end
+                    espObj.ArrowDist.TextSize = dTxtSz
+                    espObj.ArrowDist.TextColor3 = dCol
                     espObj.ArrowDist.Text = dVal .. GetCfg("Distance.Ending")
-                    espObj.ArrowDist.Position = UDim2.new(0, ax - 75, 0, textY)
+                    if dSide == "Top" then
+                        espObj.ArrowDist.Position = UDim2.new(0, ax - 75, 0, ay - sz - dGap - dTxtSz)
+                    elseif dSide == "Left" then
+                        espObj.ArrowDist.Position = UDim2.new(0, ax - sz - dGap - 150, 0, ay - 6)
+                    elseif dSide == "Right" then
+                        espObj.ArrowDist.Position = UDim2.new(0, ax + sz + dGap, 0, ay - 6)
+                    else
+                        espObj.ArrowDist.Position = UDim2.new(0, ax - 75, 0, textY)
+                    end
+                    ApplyTextOutline(espObj.ArrowDist, dOut and "Full" or "None", dOutCol or Color3.fromRGB(0, 0, 0))
                     espObj.ArrowDist.Visible = true
                 else
                     espObj.ArrowDist.Visible = false
