@@ -1316,35 +1316,53 @@ local UpdateESPObj = LPHNoVirtualize(function(espObj, position, size, name, dist
                     espObj.ArrowOutline.Visible = false
                 end
 
+                espObj.ArrowInner.Text = "▲"
+                espObj.ArrowInner.Font = Enum.Font.SourceSans
                 espObj.ArrowInner.TextSize = sz
                 espObj.ArrowInner.TextColor3 = col
                 espObj.ArrowInner.Position = UDim2.new(0, ax - sz, 0, ay - sz)
+                espObj.ArrowInner.Size = UDim2.new(0, sz * 2, 0, sz * 2)
                 espObj.ArrowInner.Rotation = rot
                 espObj.ArrowInner.Visible = true
 
-                -- Arrow text (name + distance)
+                -- Arrow name + distance (separate labels, simple - no stroke)
                 local aFont = GetCfg("OffScreenArrows.Font")
                 local aTxtSz = GetCfg("OffScreenArrows.TextSize")
-                local aSide = GetCfg("OffScreenArrows.TextSide")
-                local aGap = GetCfg("OffScreenArrows.TextGap") or 4
                 local aFontObj = _fontMap[aFont] or Enum.Font.Code
                 local aFontLoaded = ESPFonts.Loaded[aFont]
+                local textY = ay + sz + 4
 
-                local function posLabel(label, idx)
-                    label.Font = aFontObj
-                    if aFontLoaded then label.FontFace = aFontLoaded end
-                    label.TextSize = aTxtSz
-                    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    local lineH = aTxtSz + 1
-                    if aSide == "Bottom" then
-                        label.Position = UDim2.new(0, ax - 75, 0, ay + sz + aGap + idx * lineH)
-                    elseif aSide == "Top" then
-                        label.Position = UDim2.new(0, ax - 75, 0, ay - sz - aGap - (idx + 1) * lineH)
-                    elseif aSide == "Left" then
-                        label.Position = UDim2.new(0, ax - sz - aGap - 150, 0, ay - 6 + idx * lineH)
+                if GetCfg("OffScreenArrows.ShowName") and name and name ~= "" then
+                    espObj.ArrowName.Font = aFontObj
+                    if aFontLoaded then espObj.ArrowName.FontFace = aFontLoaded end
+                    espObj.ArrowName.TextSize = aTxtSz
+                    espObj.ArrowName.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    espObj.ArrowName.Text = name
+                    espObj.ArrowName.Position = UDim2.new(0, ax - 75, 0, textY)
+                    espObj.ArrowName.Visible = true
+                    textY = textY + aTxtSz + 1
+                else
+                    espObj.ArrowName.Visible = false
+                end
+
+                if GetCfg("OffScreenArrows.ShowDistance") then
+                    local dUnit = GetCfg("Distance.Unit")
+                    local dVal
+                    if dUnit == "Meters" then
+                        dVal = math.floor(distanceStuds / GetCfg("Distance.StudsPerMeter"))
                     else
-                        label.Position = UDim2.new(0, ax + sz + aGap, 0, ay - 6 + idx * lineH)
+                        dVal = math.floor(distanceStuds)
                     end
+                    espObj.ArrowDist.Font = aFontObj
+                    if aFontLoaded then espObj.ArrowDist.FontFace = aFontLoaded end
+                    espObj.ArrowDist.TextSize = aTxtSz
+                    espObj.ArrowDist.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    espObj.ArrowDist.Text = dVal .. GetCfg("Distance.Ending")
+                    espObj.ArrowDist.Position = UDim2.new(0, ax - 75, 0, textY)
+                    espObj.ArrowDist.Visible = true
+                else
+                    espObj.ArrowDist.Visible = false
+                end
                 end
 
                 local idx = 0
